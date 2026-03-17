@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>People Management - Prototipo</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>People Management</h1>
+      <p class="subtitle">Prototipo de tela (dashboard + visao individual)</p>
+    </div>
+    <div class="topbar-actions">
+      <button id="goDashboard" class="btn ghost">Dashboard</button>
+      <button id="goLeader" class="btn">Visao do liderado</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section id="dashboardView" class="view">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Dashboard</h2>
+          <button class="btn">+ Novo liderado</button>
+        </div>
+        <p class="muted">Visao consolidada com indicadores principais.</p>
+
+        <div id="dashboardSummaryCards" class="dashboard-summary-cards"></div>
+      </div>
+    </section>
+
+    <section id="leaderView" class="view hidden">
+      <aside class="left-column">
+        <div class="panel sticky">
+          <h2>Resumo do liderado</h2>
+          <p id="summaryLeaderName" class="muted small"></p>
+          <div id="summaryBlock" class="summary"></div>
+          <h3 class="radar-title">Radar Cultural <select id="radarDateSelect" class="radar-date" aria-label="Selecionar data da avaliacao cultural"></select></h3>
+          <svg id="radar" viewBox="0 0 260 220" aria-label="Grafico radar de exemplo"></svg>
+          <p class="muted small">Dimensoes configuraveis: Aprender e Melhorar Sempre, Atitude de Dono, Cliente, Espirito de Equipe, Excelencia, Fazer Acontecer, Inovar para Inspirar.</p>
+        </div>
+      </aside>
+
+      <section class="right-column">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 id="leaderTitle">Liderado</h2>
+            <select id="leaderSelect" aria-label="Selecionar liderado"></select>
+          </div>
+        </div>
+
+        <div id="tabsBar" class="tabs-bar"></div>
+        <div id="sectionsContainer" class="tabs-content"></div>
+      </section>
+    </section>
+  </main>
+
+  <template id="sectionTemplate">
+    <section class="panel section">
+      <div class="panel-header">
+        <h3 class="section-title"></h3>
+        <button class="btn ghost small">Salvar</button>
+      </div>
+      <div class="fields"></div>
+      <div class="history">
+        <h4>Historico de alteracoes</h4>
+        <ul class="history-list"></ul>
+      </div>
+    </section>
+  </template>
+
+  <div id="tooltip" class="tooltip hidden" role="tooltip"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
