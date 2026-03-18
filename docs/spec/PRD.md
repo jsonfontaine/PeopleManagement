@@ -17,6 +17,8 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - Cada card de resumo do dashboard exibe nome do liderado, indicadores principais e um Radar Cultural estático baseado na última avaliação disponível
 - Clique em um card do dashboard abre a visão individual do liderado correspondente
 - Visão do liderado organizada por abas de seção (melhor uso de espaço e foco)
+- Na visão individual, o painel de resumo lateral exibe o nome do liderado como cabeçalho
+- Navegação estilo "caminho" (breadcrumb) no topo da área de conteúdo: `Dashboard | [combobox de liderados]`; o combobox permite trocar de liderado sem retornar ao dashboard
 - Seções `1:1`, `Feedbacks` e `Cultura` com histórico em formato de tabela + linha editável para novo registro
 - Radar Cultural baseado em avaliações de Cultura, com seleção de data, navegação por scroll do mouse e transição animada
 
@@ -65,6 +67,8 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - RF-21: Em qualquer tela que exiba uma informação tratada pelo sistema, o sistema deve exibir um ícone de informação ao lado do respectivo label.
 - RF-22: Ao passar o mouse sobre o ícone de informação, o sistema deve exibir um popup com todas as perguntas exploratórias cadastradas para aquele tipo de informação, independentemente do liderado selecionado.
 - RF-23: O sistema deve manter um histórico completo de todas as alterações realizadas em qualquer informação do liderado, incluindo data/hora da alteração, valor anterior, novo valor e usuário responsável. O histórico deve ser consultável pelo usuário em cada seção, permitindo acompanhar a evolução das informações ao longo do tempo.
+- RF-24: A visão individual do liderado deve exibir, no topo da área de conteúdo, uma barra de navegação estilo breadcrumb com: um link acionável "Dashboard" (retorna ao dashboard) e um combobox com todos os liderados cadastrados (permite alternar de liderado sem sair da visão individual).
+- RF-25: O painel lateral de resumo da visão individual deve exibir o nome do liderado como título do painel.
 
 ## 6. Requisitos Não Funcionais + Ranking de Qualidades
 **Requisitos Não Funcionais**
@@ -107,8 +111,9 @@ Atores: Gerente / Sistema
 Intenção: Consultar e editar informações sem sobrecarga visual.  
 Etapas:
 - O usuário seleciona um liderado no dashboard por meio de um card de resumo.
-- O sistema abre a visão individual com abas por seção.
+- O sistema abre a visão individual exibindo o nome do liderado no painel lateral e um breadcrumb no topo: `Dashboard | [nome do liderado selecionado no combobox]`.
 - O usuário troca entre abas para consultar/editar os dados de cada contexto.
+- O usuário pode retornar ao dashboard clicando em "Dashboard" no breadcrumb, ou alternar para outro liderado diretamente pelo combobox do breadcrumb.
 
 **Fluxo 4: Registrar 1:1 em histórico tabular**  
 Atores: Gerente / Sistema  
@@ -160,6 +165,8 @@ Etapas:
 - O dashboard inicial exibe todos os liderados cadastrados em cards de resumo organizados horizontalmente, com rolagem quando necessário.
 - Cada card do dashboard exibe o nome do liderado, indicadores principais e um Radar Cultural estático baseado na última avaliação cultural disponível.
 - Ao clicar em um card do dashboard, o sistema abre a visão individual do liderado correspondente.
+- A visão individual exibe no topo da área de conteúdo um breadcrumb `Dashboard | [combobox]`; clicar em "Dashboard" retorna ao dashboard e o combobox permite alternar de liderado sem sair da visão individual.
+- O painel lateral de resumo da visão individual exibe o nome do liderado como título do painel.
 - A tela individual apresenta as seções em abas e permite alternância de contexto sem recarregar a página.
 - A seção `1:1` exibe histórico tabular, mantém uma linha editável para novo registro e não utiliza coluna lateral de histórico.
 - A seção `Feedbacks` segue o mesmo padrão de histórico tabular com linha editável para novo registro, incluindo o campo `Polaridade` como combobox com opções `Positivo` e `Negativo`.

@@ -4,10 +4,6 @@ const leaders = [
     nome: "Ana Costa",
     perfil: "D/I",
     nineBox: "Alto potencial",
-    feedbacks: 8,
-    oneOnOnes: 14,
-    notaGeral: 4.5,
-    radar: [80, 72, 68, 77, 60],
     sections: {
       "Informacoes Pessoais": {
         fields: [
@@ -56,8 +52,16 @@ const leaders = [
         history: ["2026-02-01 08:40 - Nine box atualizado"]
       },
       "Fatos e Observacoes": {
-        fields: [["Registro", "Conduziu incidente critico com boa comunicacao", "fato", true]],
-        history: ["2026-03-09 18:20 - Fato registrado"]
+        factHistory: [
+          {
+            data: "2026-03-09",
+            observacao: "Conduziu incidente critico com boa comunicacao e calma na coordenacao do time."
+          },
+          {
+            data: "2026-02-18",
+            observacao: "Facilitou alinhamento entre squads em contexto de dependencia critica."
+          }
+        ]
       },
       Cultura: {
         cultureHistory: [
@@ -84,10 +88,6 @@ const leaders = [
         ]
       },
       Feedbacks: {
-        fields: [
-          ["Conteudo do feedback", "Excelente colaboracao cross-team", "conteudo", true],
-          ["Receptividade", "Alta", "receptividade"]
-        ],
         feedbackHistory: [
           {
             data: "2026-03-10",
@@ -110,11 +110,6 @@ const leaders = [
         ]
       },
       "1:1": {
-        fields: [
-          ["Consideracoes", "Foco em delegacao", "consideracoes", true],
-          ["Tarefas acordadas", "Delegar ritual de planejamento", "tarefas", true],
-          ["Proximo encontro", "2026-03-24", "proximoEncontro"]
-        ],
         oneOnOneHistory: [
           {
             data: "2026-03-11",
@@ -143,10 +138,6 @@ const leaders = [
     nome: "Bruno Lima",
     perfil: "S/C",
     nineBox: "Eficaz",
-    feedbacks: 5,
-    oneOnOnes: 11,
-    notaGeral: 4.2,
-    radar: [62, 78, 70, 74, 58],
     sections: {}
   },
   {
@@ -154,10 +145,6 @@ const leaders = [
     nome: "Carla Nunes",
     perfil: "I/D",
     nineBox: "Mantenedora",
-    feedbacks: 4,
-    oneOnOnes: 9,
-    notaGeral: 4.0,
-    radar: [70, 66, 64, 82, 55],
     sections: {}
   }
 ];
@@ -199,12 +186,9 @@ let currentLeader = leaders[0];
 
 const dashboardView = document.getElementById("dashboardView");
 const leaderView = document.getElementById("leaderView");
-const goDashboard = document.getElementById("goDashboard");
-const goLeader = document.getElementById("goLeader");
-const dashboardLeaderName = document.getElementById("dashboardLeaderName");
-const dashboardLeaderSelect = document.getElementById("dashboardLeaderSelect");
+const leaderBreadcrumb = document.getElementById("leaderBreadcrumb");
+const breadcrumbDashboard = document.getElementById("breadcrumbDashboard");
 const leaderSelect = document.getElementById("leaderSelect");
-const leaderTitle = document.getElementById("leaderTitle");
 const summaryLeaderName = document.getElementById("summaryLeaderName");
 const summaryBlock = document.getElementById("summaryBlock");
 const dashboardSummaryCards = document.getElementById("dashboardSummaryCards");
@@ -224,12 +208,10 @@ function init() {
   renderLeaderOptions();
   renderLeader(currentLeader.id);
 
-  goDashboard.addEventListener("click", () => setView("dashboard"));
-  goLeader.addEventListener("click", () => setView("leader"));
-  leaderSelect.addEventListener("change", (event) => renderLeader(Number(event.target.value)));
-  if (dashboardLeaderSelect) {
-    dashboardLeaderSelect.addEventListener("change", (event) => renderLeader(Number(event.target.value)));
+  if (breadcrumbDashboard) {
+    breadcrumbDashboard.addEventListener("click", () => setView("dashboard"));
   }
+  leaderSelect.addEventListener("change", (event) => renderLeader(Number(event.target.value)));
   tabsBar.addEventListener("click", onTabClick);
 
   if (radarDateSelect) {
@@ -245,15 +227,12 @@ function setView(viewName) {
   const isDashboard = viewName === "dashboard";
   dashboardView.classList.toggle("hidden", !isDashboard);
   leaderView.classList.toggle("hidden", isDashboard);
+  if (leaderBreadcrumb) {
+    leaderBreadcrumb.classList.toggle("hidden", isDashboard);
+  }
 }
 
 function renderDashboard() {
-  if (dashboardLeaderName) {
-    dashboardLeaderName.textContent = `Liderado: ${currentLeader.nome}`;
-  }
-  if (dashboardLeaderSelect) {
-    dashboardLeaderSelect.value = String(currentLeader.id);
-  }
 
   if (!dashboardSummaryCards) {
     return;
@@ -302,32 +281,20 @@ function renderDashboard() {
 
 function renderLeaderOptions() {
   leaderSelect.innerHTML = "";
-  if (dashboardLeaderSelect) {
-    dashboardLeaderSelect.innerHTML = "";
-  }
 
   leaders.forEach((leader) => {
     const option = document.createElement("option");
     option.value = String(leader.id);
     option.textContent = leader.nome;
     leaderSelect.appendChild(option);
-
-    if (dashboardLeaderSelect) {
-      const dashboardOption = option.cloneNode(true);
-      dashboardLeaderSelect.appendChild(dashboardOption);
-    }
   });
 }
 
 function renderLeader(leaderId) {
   currentLeader = leaders.find((item) => item.id === leaderId) || leaders[0];
   leaderSelect.value = String(currentLeader.id);
-  if (dashboardLeaderSelect) {
-    dashboardLeaderSelect.value = String(currentLeader.id);
-  }
-  leaderTitle.textContent = `Liderado: ${currentLeader.nome}`;
   if (summaryLeaderName) {
-    summaryLeaderName.textContent = `Liderado: ${currentLeader.nome}`;
+    summaryLeaderName.textContent = currentLeader.nome;
   }
 
   renderSummary(currentLeader);
@@ -347,12 +314,13 @@ function renderSummary(leader, targetBlock = summaryBlock) {
   }
 
   targetBlock.innerHTML = "";
+  const summaryMetrics = getLeaderSummaryMetrics(leader);
   const kpis = [
-    ["Perfil", leader.perfil],
-    ["Nine Box", leader.nineBox],
-    ["Feedbacks", leader.feedbacks],
-    ["1:1", leader.oneOnOnes],
-    ["Nota geral", leader.notaGeral.toFixed(1)]
+    ["Perfil", summaryMetrics.perfil],
+    ["Nine Box", summaryMetrics.nineBox],
+    ["Feedbacks", summaryMetrics.feedbacks],
+    ["1:1", summaryMetrics.oneOnOnes],
+    ["Nota geral", summaryMetrics.notaGeral]
   ];
 
   kpis.forEach(([label, value]) => {
@@ -363,13 +331,56 @@ function renderSummary(leader, targetBlock = summaryBlock) {
   });
 }
 
-function renderDashboardSummary(leader) {
-  // Dashboard now renders one summary card per leader via renderDashboard.
-}
 
 function getCultureEntries(leader) {
   const history = leader.sections?.Cultura?.cultureHistory || [];
   return [...history].sort((a, b) => String(b.data).localeCompare(String(a.data)));
+}
+
+function getLatestCultureEntry(leader) {
+  return getCultureEntries(leader)[0] || null;
+}
+
+function getCultureAverage(entry) {
+  if (!entry) {
+    return null;
+  }
+
+  const scores = [
+    entry.aprender,
+    entry.dono,
+    entry.cliente,
+    entry.equipe,
+    entry.excelencia,
+    entry.acontecer,
+    entry.inovar
+  ].map(Number);
+
+  if (scores.some((value) => Number.isNaN(value))) {
+    return null;
+  }
+
+  const total = scores.reduce((sum, value) => sum + value, 0);
+  return total / scores.length;
+}
+
+function getLeaderSummaryMetrics(leader) {
+  const feedbacks = leader.sections?.Feedbacks?.feedbackHistory || [];
+  const oneOnOnes = leader.sections?.["1:1"]?.oneOnOneHistory || [];
+  const latestCultureEntry = getLatestCultureEntry(leader);
+  const cultureAverage = getCultureAverage(latestCultureEntry);
+
+  return {
+    perfil: leader.perfil || "—",
+    nineBox: leader.nineBox || "—",
+    feedbacks: feedbacks.length,
+    oneOnOnes: oneOnOnes.length,
+    notaGeral: cultureAverage === null ? "—" : cultureAverage.toFixed(1)
+  };
+}
+
+function getFactEntries(sectionData) {
+  return Array.isArray(sectionData.factHistory) ? sectionData.factHistory : [];
 }
 
 function setupRadarDateOptions(entries, selectedIndex) {
@@ -640,6 +651,40 @@ function renderSections(leader) {
                 <td>${row.consideracoes}</td>
                 <td>${row.tarefas}</td>
                 <td>${row.proximo}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      const historyBlock = sectionNode.querySelector(".history");
+      if (historyBlock) {
+        historyBlock.remove();
+      }
+    } else if (sectionName === "Fatos e Observacoes") {
+      sectionNode.classList.add("single-column");
+      const history = getFactEntries(sectionData);
+      fieldsContainer.innerHTML = `
+        <table class="history-table facts-table">
+          <colgroup>
+            <col class="col-date" />
+            <col class="col-observacao" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Fato ou observacao</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="history-edit">
+              <td><input class="date-input" type="text" placeholder="2026-03-18" aria-label="Data do fato ou observacao" /></td>
+              <td><textarea placeholder="Registrar fato ou observacao relevante" aria-label="Fato ou observacao relevante" rows="2"></textarea></td>
+            </tr>
+            ${history.map((row) => `
+              <tr>
+                <td>${row.data || ""}</td>
+                <td>${row.observacao || ""}</td>
               </tr>
             `).join("")}
           </tbody>

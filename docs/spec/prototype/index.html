@@ -12,13 +12,15 @@
       <h1>People Management</h1>
       <p class="subtitle">Prototipo de tela (dashboard + visao individual)</p>
     </div>
-    <div class="topbar-actions">
-      <button id="goDashboard" class="btn ghost">Dashboard</button>
-      <button id="goLeader" class="btn">Visao do liderado</button>
-    </div>
   </header>
 
   <main class="layout">
+    <nav id="leaderBreadcrumb" class="breadcrumb hidden" aria-label="Navegacao">
+      <button id="breadcrumbDashboard" class="breadcrumb-link">Dashboard</button>
+      <span class="breadcrumb-sep">|</span>
+      <select id="leaderSelect" class="radar-date" aria-label="Selecionar liderado"></select>
+    </nav>
+
     <section id="dashboardView" class="view">
       <div class="panel">
         <div class="panel-header">
@@ -34,8 +36,7 @@
     <section id="leaderView" class="view hidden">
       <aside class="left-column">
         <div class="panel sticky">
-          <h2>Resumo do liderado</h2>
-          <p id="summaryLeaderName" class="muted small"></p>
+          <h2 id="summaryLeaderName"></h2>
           <div id="summaryBlock" class="summary"></div>
           <h3 class="radar-title">Radar Cultural <select id="radarDateSelect" class="radar-date" aria-label="Selecionar data da avaliacao cultural"></select></h3>
           <svg id="radar" viewBox="0 0 260 220" aria-label="Grafico radar de exemplo"></svg>
@@ -44,12 +45,6 @@
       </aside>
 
       <section class="right-column">
-        <div class="panel">
-          <div class="panel-header">
-            <h2 id="leaderTitle">Liderado</h2>
-            <select id="leaderSelect" aria-label="Selecionar liderado"></select>
-          </div>
-        </div>
 
         <div id="tabsBar" class="tabs-bar"></div>
         <div id="sectionsContainer" class="tabs-content"></div>
