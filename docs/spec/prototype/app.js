@@ -25,7 +25,25 @@ const leaders = [
           ["Valores", "Autonomia e responsabilidade", "valores", true],
           ["Expectativas", "Maior exposicao estrategica", "expectativas", true]
         ],
-        history: ["2026-03-05 16:40 - Expectativas atualizadas"]
+        propertyHistory: {
+          conhecimentos: [
+            { data: "2026-03-10", valor: "Backend, Cloud, Observabilidade" },
+            { data: "2026-01-15", valor: "Backend e APIs" }
+          ],
+          habilidades: [
+            { data: "2026-03-01", valor: "Comunicacao com negocio" }
+          ],
+          atitudes: [
+            { data: "2026-02-22", valor: "Proativa" }
+          ],
+          valores: [
+            { data: "2026-02-05", valor: "Autonomia e responsabilidade" }
+          ],
+          expectativas: [
+            { data: "2026-03-05", valor: "Maior exposicao estrategica" },
+            { data: "2025-12-10", valor: "Assumir projetos criticos" }
+          ]
+        }
       },
       "GROW / PDI": {
         fields: [
@@ -34,14 +52,38 @@ const leaders = [
           ["O que pode ajudar", "Mentoria e shadowing de reunioes", "opcoes", true],
           ["Proximos passos", "Plano de 90 dias", "proximosPassos", true]
         ],
-        history: ["2026-03-07 11:00 - Proximos passos ajustados"]
+        propertyHistory: {
+          metas: [
+            { data: "2026-03-07", valor: "Liderar uma area de plataforma" },
+            { data: "2025-11-18", valor: "Ser referencia tecnica" }
+          ],
+          situacaoAtual: [
+            { data: "2026-02-28", valor: "Em transicao para coordenacao" }
+          ],
+          opcoes: [
+            { data: "2026-03-02", valor: "Mentoria e shadowing de reunioes" }
+          ],
+          proximosPassos: [
+            { data: "2026-03-07", valor: "Plano de 90 dias" },
+            { data: "2026-02-10", valor: "Definir marcos mensais" }
+          ]
+        }
       },
       SWOT: {
         fields: [
           ["Fortalezas e oportunidades", "Visao sistemica", "fortalezas", true],
           ["Fraquezas e ameacas", "Gestao de conflitos", "fraquezas", true]
         ],
-        history: ["2026-02-27 14:13 - SWOT revisada no 1:1"]
+        propertyHistory: {
+          fortalezas: [
+            { data: "2026-02-27", valor: "Visao sistemica" },
+            { data: "2025-12-22", valor: "Facilidade de alinhamento tecnico" }
+          ],
+          fraquezas: [
+            { data: "2026-02-27", valor: "Gestao de conflitos" },
+            { data: "2025-12-22", valor: "Delegacao em picos" }
+          ]
+        }
       },
       Classificacao: {
         fields: [
@@ -49,7 +91,20 @@ const leaders = [
           ["Personalidade", "ENTJ", "personalidade"],
           ["Nine Box", "Alto potencial", "nineBox"]
         ],
-        history: ["2026-02-01 08:40 - Nine box atualizado"]
+        classificationHistory: {
+          disc: [
+            { data: "2026-03-14", valor: "DI" },
+            { data: "2026-01-23", valor: "ID" }
+          ],
+          personalidade: [
+            { data: "2026-02-20", valor: "ENTJ" },
+            { data: "2025-11-05", valor: "ENFJ" }
+          ],
+          nineBox: [
+            { data: "2026-02-01", valor: "Alto potencial" },
+            { data: "2025-12-01", valor: "Eficaz" }
+          ]
+        }
       },
       "Fatos e Observacoes": {
         factHistory: [
@@ -383,6 +438,23 @@ function getFactEntries(sectionData) {
   return Array.isArray(sectionData.factHistory) ? sectionData.factHistory : [];
 }
 
+function getPropertyHistoryRows(field, sectionData, historyKey = "propertyHistory") {
+  const [, value, key] = field;
+  const historyByProperty = sectionData[historyKey] || {};
+  const propertyHistory = Array.isArray(historyByProperty[key]) ? historyByProperty[key] : [];
+
+  if (propertyHistory.length > 0) {
+    return propertyHistory.map((entry) => ({
+      data: entry.data || "",
+      valor: entry.valor || entry.value || ""
+    }));
+  }
+
+  return value
+    ? [{ data: "", valor: value }]
+    : [];
+}
+
 function setupRadarDateOptions(entries, selectedIndex) {
   if (!radarDateSelect) {
     return;
@@ -690,6 +762,88 @@ function renderSections(leader) {
           </tbody>
         </table>
       `;
+
+      const historyBlock = sectionNode.querySelector(".history");
+      if (historyBlock) {
+        historyBlock.remove();
+      }
+    } else if (["Classificacao", "CHAVE", "GROW / PDI", "SWOT"].includes(sectionName)) {
+      sectionNode.classList.add("single-column");
+      fieldsContainer.classList.add("fields--prop-tabs");
+      const historyKey = sectionName === "Classificacao" ? "classificationHistory" : "propertyHistory";
+      const fields = Array.isArray(sectionData.fields) ? sectionData.fields : [];
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "prop-tabs";
+
+      // Tab bar
+      const propTabsBar = document.createElement("div");
+      propTabsBar.className = "prop-tabs-bar";
+      fields.forEach((field, i) => {
+        const [label] = field;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "prop-tab-btn" + (i === 0 ? " active" : "");
+        btn.textContent = label;
+        propTabsBar.appendChild(btn);
+      });
+
+      // Panels
+      const propTabsContent = document.createElement("div");
+      propTabsContent.className = "prop-tabs-content";
+      fields.forEach((field, i) => {
+        const [label] = field;
+        const history = getPropertyHistoryRows(field, sectionData, historyKey);
+        const panel = document.createElement("div");
+        panel.className = "prop-tab-panel" + (i === 0 ? " active" : "");
+        panel.innerHTML = `
+          <table class="history-table classification-table">
+            <colgroup>
+              <col class="col-date" />
+              <col class="col-value" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>${label}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="history-edit">
+                <td><input class="date-input" type="text" placeholder="2026-03-18" aria-label="Data do registro de ${label}" /></td>
+                <td><textarea placeholder="Registrar ${label}" aria-label="Registro de ${label}" rows="2"></textarea></td>
+              </tr>
+              ${history.map((row) => `
+                <tr>
+                  <td>${row.data || ""}</td>
+                  <td>${row.valor || ""}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+        propTabsContent.appendChild(panel);
+      });
+
+      wrapper.appendChild(propTabsBar);
+      wrapper.appendChild(propTabsContent);
+
+      // Tab navigation
+      const propTabBtns = propTabsBar.querySelectorAll(".prop-tab-btn");
+      const propPanels = propTabsContent.querySelectorAll(".prop-tab-panel");
+      propTabsBar.addEventListener("click", (e) => {
+        const btn = e.target.closest(".prop-tab-btn");
+        if (!btn) { return; }
+        const idx = [...propTabBtns].indexOf(btn);
+        if (idx === -1) { return; }
+        propTabBtns.forEach((b) => b.classList.remove("active"));
+        propPanels.forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        propPanels[idx].classList.add("active");
+      });
+
+      fieldsContainer.innerHTML = "";
+      fieldsContainer.appendChild(wrapper);
 
       const historyBlock = sectionNode.querySelector(".history");
       if (historyBlock) {

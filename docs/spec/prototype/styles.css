@@ -218,6 +218,50 @@ textarea { min-height: 66px; resize: vertical; }
 .facts-table .col-date { width: 120px; }
 .facts-table .col-observacao { width: auto; }
 
+/* Override .fields grid for inner prop-tabs sections */
+.fields--prop-tabs {
+  display: block !important;
+}
+
+/* Inner property tabs — mirrors the outer section tabs */
+.prop-tabs {
+  width: 100%;
+}
+
+.prop-tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.prop-tab-btn {
+  border: 1px solid var(--line);
+  background: #0b1220;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.prop-tab-btn.active {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.prop-tab-panel {
+  display: none;
+  width: 100%;
+}
+
+.prop-tab-panel.active {
+  display: block;
+}
+
+.classification-table .col-date { width: 120px; }
+.classification-table .col-value { width: auto; }
+
 .history-table th,
 .history-table td {
   border-bottom: 1px solid var(--line);
@@ -384,6 +428,8 @@ textarea { min-height: 66px; resize: vertical; }
 .dashboard-summary-card .summary {
   margin-top: 8px;
 }
+
+.dashboard-radar {
   width: 100%;
   height: 210px;
   border: 1px dashed var(--line);
@@ -393,6 +439,7 @@ textarea { min-height: 66px; resize: vertical; }
 }
 
 @media (max-width: 1000px) {
+
   #leaderView { grid-template-columns: 1fr; }
   .left-column { width: auto; min-width: 0; }
   .sticky { position: static; }
@@ -412,3 +459,5 @@ textarea { min-height: 66px; resize: vertical; }
     padding-top: 10px;
   }
 }
+
+
