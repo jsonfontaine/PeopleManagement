@@ -8,9 +8,16 @@ const leaders = [
       "Informacoes Pessoais": {
         fields: [
           ["Nome", "Ana Costa", "nome"],
+          ["Data de nascimento", "1990-08-14", "dataNascimento"],
+          ["Estado civil", "Casada", "estadoCivil"],
+          ["Quantidade de filhos", "2", "quantidadeFilhos"],
+          ["Data de contratacao", "2019-04-08", "dataContratacao"],
           ["Cargo", "Coordenadora de Engenharia", "cargo"],
-          ["Aspiracao de carreira", "Gestao senior", "aspiracao"],
-          ["Red flags", "Centraliza decisoes em picos de pressao", "redFlags", true]
+          ["Data de inicio do cargo", "2026-02-10", "dataInicioCargo"],
+          ["Aspiracao (Carreira Y)", "Gestao senior", "aspiracao"],
+          ["Gostos pessoais", "Trilhas, cafe especial e leitura sobre lideranca", "gostosPessoais", true],
+          ["Red Flags", "Centraliza decisoes em picos de pressao", "redFlags", true],
+          ["BIO", "Profissional com forte base em engenharia de software, em evolucao para lideranca, com foco em desenvolvimento de pessoas e ambientes colaborativos.", "bio", true]
         ],
         history: [
           "2026-02-10 10:15 - Cargo: Especialista -> Coordenadora",
@@ -251,12 +258,18 @@ const tabsBar = document.getElementById("tabsBar");
 const sectionsContainer = document.getElementById("sectionsContainer");
 const sectionTemplate = document.getElementById("sectionTemplate");
 const tooltip = document.getElementById("tooltip");
+const tooltipModal = document.getElementById("tooltipModal");
+const tooltipModalTitle = document.getElementById("tooltipModalTitle");
+const tooltipModalInput = document.getElementById("tooltipModalInput");
+const tooltipModalCancel = document.getElementById("tooltipModalCancel");
+const tooltipModalSave = document.getElementById("tooltipModalSave");
 const radarDateSelect = document.getElementById("radarDateSelect");
 
 let currentRadarValues = null;
 let radarAnimationId = null;
 let cultureEntries = [];
 let cultureIndex = 0;
+let activeTooltipKey = null;
 
 function init() {
   renderDashboard();
@@ -276,6 +289,24 @@ function init() {
 
   document.addEventListener("mouseover", onInfoHover);
   document.addEventListener("mouseout", onInfoOut);
+  document.addEventListener("dblclick", onInfoDoubleClick);
+  document.addEventListener("keydown", onDocumentKeydown);
+
+  if (tooltipModalCancel) {
+    tooltipModalCancel.addEventListener("click", closeTooltipModal);
+  }
+
+  if (tooltipModalSave) {
+    tooltipModalSave.addEventListener("click", saveTooltipModal);
+  }
+
+  if (tooltipModal) {
+    tooltipModal.addEventListener("click", (event) => {
+      if (event.target === tooltipModal) {
+        closeTooltipModal();
+      }
+    });
+  }
 }
 
 function setView(viewName) {
@@ -453,6 +484,45 @@ function getPropertyHistoryRows(field, sectionData, historyKey = "propertyHistor
   return value
     ? [{ data: "", valor: value }]
     : [];
+}
+
+function getSectionFieldsMap(sectionData) {
+  const fields = Array.isArray(sectionData.fields) ? sectionData.fields : [];
+
+  return fields.reduce((acc, [label, value, key, isTextarea]) => {
+    const fieldKey = key || label;
+    acc[fieldKey] = {
+      label,
+      value: value ?? "",
+      questionKey: key || "default",
+      isTextarea: Boolean(isTextarea)
+    };
+    return acc;
+  }, {});
+}
+
+function createInfoIconMarkup(label, questionKey) {
+  return `<span class="info-icon" data-qkey="${questionKey || "default"}" data-field-label="${label}">i</span>`;
+}
+
+function createFieldNode(fieldData) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "field";
+  const inputTag = fieldData.isTextarea ? "textarea" : "input";
+
+  wrapper.innerHTML = `
+    <label>
+      ${fieldData.label}
+      ${createInfoIconMarkup(fieldData.label, fieldData.questionKey)}
+    </label>
+    <${inputTag}>${fieldData.isTextarea ? fieldData.value : ""}</${inputTag}>
+  `;
+
+  if (!fieldData.isTextarea) {
+    wrapper.querySelector("input").value = fieldData.value;
+  }
+
+  return wrapper;
 }
 
 function setupRadarDateOptions(entries, selectedIndex) {
@@ -733,6 +803,68 @@ function renderSections(leader) {
       if (historyBlock) {
         historyBlock.remove();
       }
+    } else if (sectionName === "Informacoes Pessoais") {
+      sectionNode.classList.add("single-column");
+      fieldsContainer.classList.add("personal-info-grid");
+
+      const fieldMap = getSectionFieldsMap(sectionData);
+      const leftColumnOrder = [
+        "nome",
+        "dataNascimento",
+        "estadoCivil",
+        "quantidadeFilhos",
+        "dataContratacao",
+        "cargo",
+        "dataInicioCargo",
+        "aspiracao"
+      ];
+      const leftColumn = document.createElement("div");
+      leftColumn.className = "personal-info-column personal-info-column--stack";
+
+      leftColumnOrder.forEach((fieldKey) => {
+        const fieldData = fieldMap[fieldKey];
+        if (!fieldData) {
+          return;
+        }
+
+        leftColumn.appendChild(createFieldNode(fieldData));
+      });
+
+      const middleColumn = document.createElement("div");
+      middleColumn.className = "personal-info-column personal-info-column--stack personal-info-secondary";
+      ["gostosPessoais", "redFlags"].forEach((fieldKey) => {
+        const fieldData = fieldMap[fieldKey];
+        if (!fieldData) {
+          return;
+        }
+
+        middleColumn.appendChild(createFieldNode(fieldData));
+      });
+
+      const rightColumn = document.createElement("div");
+      rightColumn.className = "personal-info-column personal-info-column--stack personal-info-bio";
+
+      const bioField = fieldMap.bio || { label: "BIO", value: "", questionKey: "default", isTextarea: true };
+      const bioWrapper = document.createElement("div");
+      bioWrapper.className = "field field-bio";
+      bioWrapper.innerHTML = `
+        <label>
+          ${bioField.label}
+          ${createInfoIconMarkup(bioField.label, bioField.questionKey)}
+        </label>
+        <textarea aria-label="${bioField.label}" rows="15">${bioField.value}</textarea>
+      `;
+      rightColumn.appendChild(bioWrapper);
+
+      fieldsContainer.innerHTML = "";
+      fieldsContainer.appendChild(leftColumn);
+      fieldsContainer.appendChild(middleColumn);
+      fieldsContainer.appendChild(rightColumn);
+
+      const historyBlock = sectionNode.querySelector(".history");
+      if (historyBlock) {
+        historyBlock.remove();
+      }
     } else if (sectionName === "Fatos e Observacoes") {
       sectionNode.classList.add("single-column");
       const history = getFactEntries(sectionData);
@@ -967,7 +1099,7 @@ function renderSections(leader) {
         wrapper.innerHTML = `
           <label>
             ${label}
-            <span class="info-icon" data-qkey="${questionKey || "default"}">i</span>
+            ${createInfoIconMarkup(label, questionKey || "default")}
           </label>
           <${inputTag}>${isTextarea ? value : ""}</${inputTag}>
         `;
@@ -1026,8 +1158,8 @@ function onInfoHover(event) {
   }
 
   const qKey = icon.dataset.qkey || "default";
-  const questions = exploratoryQuestions[qKey] || exploratoryQuestions.default;
-  tooltip.innerHTML = `<strong>Perguntas exploratorias:</strong><br>${questions.map((q) => `- ${q}`).join("<br>")}`;
+  const questions = getTooltipQuestions(qKey);
+  tooltip.textContent = questions.join("\n");
   tooltip.classList.remove("hidden");
 
   const rect = icon.getBoundingClientRect();
@@ -1040,6 +1172,85 @@ function onInfoOut(event) {
     return;
   }
   tooltip.classList.add("hidden");
+}
+
+function getTooltipQuestions(qKey) {
+  const questions = exploratoryQuestions[qKey];
+
+  if (Array.isArray(questions) && questions.length > 0) {
+    return questions;
+  }
+
+  if (typeof questions === "string" && questions.trim()) {
+    return [questions.trim()];
+  }
+
+  return exploratoryQuestions.default;
+}
+
+function getTooltipEditorValue(qKey) {
+  // Keep modal content aligned with what is rendered in the hover tooltip.
+  return getTooltipQuestions(qKey).join("\n");
+}
+
+function onInfoDoubleClick(event) {
+  const icon = event.target.closest(".info-icon");
+  if (!icon) {
+    return;
+  }
+
+  event.preventDefault();
+  openTooltipModal(icon);
+}
+
+function openTooltipModal(icon) {
+  if (!tooltipModal || !tooltipModalInput || !tooltipModalTitle) {
+    return;
+  }
+
+  activeTooltipKey = icon.dataset.qkey || "default";
+  const fieldLabel = icon.dataset.fieldLabel || "campo";
+  tooltip.classList.add("hidden");
+  tooltipModalTitle.textContent = `Editar tooltip - ${fieldLabel}`;
+  tooltipModalInput.value = getTooltipEditorValue(activeTooltipKey);
+  tooltipModal.classList.remove("hidden");
+  if (typeof tooltipModal.showModal === "function" && !tooltipModal.open) {
+    tooltipModal.showModal();
+  }
+  tooltipModalInput.focus();
+  tooltipModalInput.select();
+}
+
+function closeTooltipModal() {
+  if (!tooltipModal) {
+    return;
+  }
+
+  if (typeof tooltipModal.close === "function" && tooltipModal.open) {
+    tooltipModal.close();
+  }
+  tooltipModal.classList.add("hidden");
+  activeTooltipKey = null;
+}
+
+function saveTooltipModal() {
+  if (!tooltipModalInput || !activeTooltipKey) {
+    return;
+  }
+
+  const nextValue = tooltipModalInput.value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  exploratoryQuestions[activeTooltipKey] = nextValue;
+  closeTooltipModal();
+}
+
+function onDocumentKeydown(event) {
+  if (event.key === "Escape" && tooltipModal && !tooltipModal.classList.contains("hidden")) {
+    closeTooltipModal();
+  }
 }
 
 init();

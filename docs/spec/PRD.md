@@ -20,6 +20,11 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - Na visão individual, o painel de resumo lateral exibe o nome do liderado como cabeçalho
 - Navegação estilo "caminho" (breadcrumb) no topo da área de conteúdo: `Dashboard | [combobox de liderados]`; o combobox permite trocar de liderado sem retornar ao dashboard
 - Seções `1:1`, `Feedbacks` e `Cultura` com histórico em formato de tabela + linha editável para novo registro
+- Seções `Classificacao`, `CHAVE`, `GROW / PDI` e `SWOT` com histórico por propriedade, exibido em abas internas por propriedade (uma tabela por aba com `Data | Propriedade`)
+- Para tabelas de histórico por propriedade, a primeira linha é editável para novo registro e as linhas históricas são somente leitura
+- Seção `Informacoes Pessoais` com layout dedicado em 3 colunas e distribuição fixa de campos
+- Tooltip informativo sem título fixo e sem bullets, com quebra de linha simples
+- Edição de tooltip por duplo clique no ícone de informação, com modal de edição e carregamento prévio do texto atual
 - Radar Cultural baseado em avaliações de Cultura, com seleção de data, navegação por scroll do mouse e transição animada
 
 **Escopo Out (Fora):**
@@ -69,6 +74,12 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - RF-23: O sistema deve manter um histórico completo de todas as alterações realizadas em qualquer informação do liderado, incluindo data/hora da alteração, valor anterior, novo valor e usuário responsável. O histórico deve ser consultável pelo usuário em cada seção, permitindo acompanhar a evolução das informações ao longo do tempo.
 - RF-24: A visão individual do liderado deve exibir, no topo da área de conteúdo, uma barra de navegação estilo breadcrumb com: um link acionável "Dashboard" (retorna ao dashboard) e um combobox com todos os liderados cadastrados (permite alternar de liderado sem sair da visão individual).
 - RF-25: O painel lateral de resumo da visão individual deve exibir o nome do liderado como título do painel.
+- RF-26: As seções `Classificacao`, `CHAVE`, `GROW / PDI` e `SWOT` devem exibir as propriedades em abas internas, cada aba contendo uma tabela de histórico no formato `Data | <Propriedade>`.
+- RF-27: Nas tabelas de histórico por propriedade (`Classificacao`, `CHAVE`, `GROW / PDI`, `SWOT`), a primeira linha deve ser editável para novo registro e as linhas subsequentes devem ser somente leitura.
+- RF-28: A seção `Informacoes Pessoais` deve ser exibida em três colunas com a seguinte distribuição: coluna 1 (`Nome`, `Data de nascimento`, `Estado civil`, `Quantidade de filhos`, `Data de contratacao`, `Cargo`, `Data de inicio do cargo`, `Aspiracao (Carreira Y)`), coluna 2 (`Gostos pessoais`, `Red Flags`) e coluna 3 (`BIO`).
+- RF-29: Ao passar o mouse sobre o ícone de informação, o tooltip deve exibir apenas o texto configurado para o tipo de informação, sem título fixo e sem formatação em bullets.
+- RF-30: Ao dar duplo clique no ícone de informação, o sistema deve abrir um modal para incluir/editar o texto do tooltip daquele campo.
+- RF-31: O modal de edição de tooltip deve carregar previamente o mesmo conteúdo textual atualmente exibido no tooltip do campo selecionado.
 
 ## 6. Requisitos Não Funcionais + Ranking de Qualidades
 **Requisitos Não Funcionais**
@@ -158,7 +169,17 @@ Intenção: Apoiar 1:1 e coleta de dados com perguntas orientadoras.
 Etapas:
 - O usuário navega em qualquer aba com campos de informação.
 - O sistema exibe ícone de informação ao lado dos labels.
-- Ao passar o mouse, o sistema mostra popup com perguntas exploratórias do tipo de informação.
+- Ao passar o mouse, o sistema mostra tooltip textual com o conteúdo configurado para o tipo de informação.
+
+**Fluxo 9: Editar texto do tooltip por campo**  
+Atores: Gerente / Sistema  
+Intenção: Ajustar rapidamente orientações exibidas no tooltip durante o uso da ferramenta.  
+Etapas:
+- O usuário dá duplo clique no ícone de informação de um campo.
+- O sistema abre modal de edição de tooltip para o campo selecionado.
+- O modal carrega automaticamente o texto atual exibido no tooltip.
+- O usuário inclui/edita o texto e salva.
+- O sistema persiste o novo conteúdo no tipo de informação e o tooltip passa a exibir o texto atualizado.
 
 ## 8. Critérios de Aceitação (Macro / de alto nível)
 
@@ -171,9 +192,12 @@ Etapas:
 - A seção `1:1` exibe histórico tabular, mantém uma linha editável para novo registro e não utiliza coluna lateral de histórico.
 - A seção `Feedbacks` segue o mesmo padrão de histórico tabular com linha editável para novo registro, incluindo o campo `Polaridade` como combobox com opções `Positivo` e `Negativo`.
 - A seção `Cultura` substitui `Avaliações Gerais` e exibe os sete pilares culturais como colunas numéricas por data.
+- As seções `Classificacao`, `CHAVE`, `GROW / PDI` e `SWOT` exibem abas internas por propriedade, cada uma com tabela `Data | Propriedade`, com primeira linha editável e histórico somente leitura.
+- A seção `Informacoes Pessoais` é exibida em três colunas com distribuição fixa: coluna 1 (dados cadastrais e carreira), coluna 2 (`Gostos pessoais` e `Red Flags`) e coluna 3 (`BIO`).
 - O Radar Cultural da visão individual exibe as sete dimensões culturais, lista todas as datas disponíveis em dropdown e atualiza ao trocar a data via seleção ou scroll do mouse.
 - A atualização do Radar Cultural da visão individual ocorre com animação de transição entre valores.
-- Em qualquer tela com informação tratada, há ícone de informação por label e popup de perguntas exploratórias no hover.
+- Em qualquer tela com informação tratada, há ícone de informação por label e tooltip textual no hover, sem título fixo e sem bullets.
+- Duplo clique no ícone de informação abre modal para incluir/editar o texto do tooltip, já preenchido com o conteúdo atual daquele campo.
 - Toda alteração realizada em qualquer informação do liderado é registrada no histórico, permitindo consulta de evolução.
 - Todas as operações funcionam localmente, sem dependência de conexão externa.
 
@@ -237,7 +261,8 @@ Etapas:
 
 - **Fonte de referência do modelo:** planilha `docs/Diretrizes de gestão/Nome - XRay.xlsx` e estrutura validada ao longo deste PRD.
 - **Técnicas de gestão de apoio:** materiais da pasta `docs/Diretrizes de gestão/` (CHAVE, GROW/STAR, Nine Box, conflitos, empoderamento, etc.) como referência conceitual, sem obrigação de implementar todos os frameworks na V1.
-- **Alinhamento da prototipação validada:** dashboard com cards de resumo por liderado em lista horizontal, visão individual com abas, histórico tabular em `1:1`, `Feedbacks` e `Cultura`, e Radar Cultural com seletor de data.
+- **Alinhamento da prototipação validada:** dashboard com cards de resumo por liderado em lista horizontal, visão individual com abas, histórico tabular em `1:1`, `Feedbacks` e `Cultura`, histórico por propriedade em abas internas para `Classificacao`/`CHAVE`/`GROW / PDI`/`SWOT`, seção `Informacoes Pessoais` em 3 colunas e Radar Cultural com seletor de data.
+- **Comportamento de tooltip validado:** tooltip textual sem título fixo e sem bullets; duplo clique no ícone de informação abre modal para editar o conteúdo, com preload do texto atual.
 - **Comportamento do Radar Cultural:** no dashboard, cada card mostra a última avaliação de forma estática; na visão individual, há seleção de data por dropdown, troca por scroll do mouse e transição animada ao atualizar os dados.
 - **Diretriz de operação local:** esta versão não contempla autenticação, multiusuário ou integração externa; qualquer evolução nesses temas deve gerar revisão deste PRD.
 - **Diretriz de proteção de dados:** apesar do uso individual/local, o conteúdo pode incluir dados pessoais e avaliações sensíveis; recomenda-se rotina formal de backup e boas práticas de segurança da estação.

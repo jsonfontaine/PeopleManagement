@@ -36,7 +36,7 @@
     <section id="leaderView" class="view hidden">
       <aside class="left-column">
         <div class="panel sticky">
-          <h2 id="summaryLeaderName"></h2>
+          <h2 id="summaryLeaderName">Liderado selecionado</h2>
           <div id="summaryBlock" class="summary"></div>
           <h3 class="radar-title">Radar Cultural <select id="radarDateSelect" class="radar-date" aria-label="Selecionar data da avaliacao cultural"></select></h3>
           <svg id="radar" viewBox="0 0 260 220" aria-label="Grafico radar de exemplo"></svg>
@@ -55,7 +55,7 @@
   <template id="sectionTemplate">
     <section class="panel section">
       <div class="panel-header">
-        <h3 class="section-title"></h3>
+        <h3 class="section-title">Secao</h3>
         <button class="btn ghost small">Salvar</button>
       </div>
       <div class="fields"></div>
@@ -67,6 +67,22 @@
   </template>
 
   <div id="tooltip" class="tooltip hidden" role="tooltip"></div>
+
+  <dialog id="tooltipModal" class="modal-backdrop hidden" aria-labelledby="tooltipModalTitle">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 id="tooltipModalTitle">Editar tooltip</h3>
+      </div>
+      <div class="modal-body">
+        <label class="modal-label" for="tooltipModalInput">Texto do tooltip</label>
+        <textarea id="tooltipModalInput" rows="8" placeholder="Digite uma linha por pergunta ou orientacao"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="tooltipModalCancel" class="btn ghost" type="button">Cancelar</button>
+        <button id="tooltipModalSave" class="btn" type="button">Salvar</button>
+      </div>
+    </div>
+  </dialog>
 
   <script src="./app.js"></script>
 </body>
