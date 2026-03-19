@@ -20,7 +20,7 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - Na visão individual, o painel de resumo lateral exibe o nome do liderado como cabeçalho
 - Navegação estilo "caminho" (breadcrumb) no topo da área de conteúdo: `Dashboard | [combobox de liderados]`; o combobox permite trocar de liderado sem retornar ao dashboard
 - Seções `1:1`, `Feedbacks` e `Cultura` com histórico em formato de tabela + linha editável para novo registro
-- Seções `Classificacao`, `CHAVE`, `GROW / PDI` e `SWOT` com histórico por propriedade, exibido em abas internas por propriedade (uma tabela por aba com `Data | Propriedade`)
+- Seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` com histórico por propriedade, exibido em abas internas por propriedade (uma tabela por aba com `Data | Propriedade`)
 - Para tabelas de histórico por propriedade, a primeira linha é editável para novo registro e as linhas históricas são somente leitura
 - Seção `Informacoes Pessoais` com layout dedicado em 3 colunas e distribuição fixa de campos
 - Tooltip informativo sem título fixo e sem bullets, com quebra de linha simples
@@ -68,14 +68,14 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - RF-17: O Radar Cultural da visão individual deve permitir escolher a data da avaliação via dropdown com todas as datas cadastradas.
 - RF-18: O Radar Cultural da visão individual deve permitir alterar a data selecionada via scroll do mouse no seletor de data.
 - RF-19: Ao alterar a data da avaliação cultural na visão individual, o Radar Cultural deve atualizar os dados com animação de transição.
-- RF-20: O usuário pode cadastrar, editar e excluir múltiplas perguntas exploratórias para cada tipo de informação acompanhada pelo sistema (ex.: conhecimentos, habilidades, atitudes, valores, expectativas, metas e próximos passos), sem associação a um liderado específico.
-- RF-21: Em qualquer tela que exiba uma informação tratada pelo sistema, o sistema deve exibir um ícone de informação ao lado do respectivo label.
-- RF-22: Ao passar o mouse sobre o ícone de informação, o sistema deve exibir um popup com todas as perguntas exploratórias cadastradas para aquele tipo de informação, independentemente do liderado selecionado.
+- RF-20: Em qualquer tela que exiba uma informação tratada pelo sistema, o sistema deve exibir um ícone de informação ao lado do respectivo label.
+- RF-21: Ao passar o mouse sobre o ícone de informação, o sistema deve exibir um tooltip textual configurado para o tipo de informação, sem título fixo e sem bullets.
+- RF-22: Ao dar duplo clique no ícone de informação, o sistema deve abrir um modal para incluir/editar o texto do tooltip daquele campo, já preenchido com o conteúdo atual.
 - RF-23: O sistema deve manter um histórico completo de todas as alterações realizadas em qualquer informação do liderado, incluindo data/hora da alteração, valor anterior, novo valor e usuário responsável. O histórico deve ser consultável pelo usuário em cada seção, permitindo acompanhar a evolução das informações ao longo do tempo.
 - RF-24: A visão individual do liderado deve exibir, no topo da área de conteúdo, uma barra de navegação estilo breadcrumb com: um link acionável "Dashboard" (retorna ao dashboard) e um combobox com todos os liderados cadastrados (permite alternar de liderado sem sair da visão individual).
 - RF-25: O painel lateral de resumo da visão individual deve exibir o nome do liderado como título do painel.
-- RF-26: As seções `Classificacao`, `CHAVE`, `GROW / PDI` e `SWOT` devem exibir as propriedades em abas internas, cada aba contendo uma tabela de histórico no formato `Data | <Propriedade>`.
-- RF-27: Nas tabelas de histórico por propriedade (`Classificacao`, `CHAVE`, `GROW / PDI`, `SWOT`), a primeira linha deve ser editável para novo registro e as linhas subsequentes devem ser somente leitura.
+- RF-26: As seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` devem exibir as propriedades em abas internas, cada aba contendo uma tabela de histórico no formato `Data | <Propriedade>`.
+- RF-27: Nas tabelas de histórico por propriedade (`Classificação de Perfil`, `CHAVE`, `GROW / PDI`, `SWOT`), a primeira linha deve ser editável para novo registro e as linhas subsequentes devem ser somente leitura.
 - RF-28: A seção `Informacoes Pessoais` deve ser exibida em três colunas com a seguinte distribuição: coluna 1 (`Nome`, `Data de nascimento`, `Estado civil`, `Quantidade de filhos`, `Data de contratacao`, `Cargo`, `Data de inicio do cargo`, `Aspiracao (Carreira Y)`), coluna 2 (`Gostos pessoais`, `Red Flags`) e coluna 3 (`BIO`).
 - RF-29: Ao passar o mouse sobre o ícone de informação, o tooltip deve exibir apenas o texto configurado para o tipo de informação, sem título fixo e sem formatação em bullets.
 - RF-30: Ao dar duplo clique no ícone de informação, o sistema deve abrir um modal para incluir/editar o texto do tooltip daquele campo.
@@ -192,7 +192,7 @@ Etapas:
 - A seção `1:1` exibe histórico tabular, mantém uma linha editável para novo registro e não utiliza coluna lateral de histórico.
 - A seção `Feedbacks` segue o mesmo padrão de histórico tabular com linha editável para novo registro, incluindo o campo `Polaridade` como combobox com opções `Positivo` e `Negativo`.
 - A seção `Cultura` substitui `Avaliações Gerais` e exibe os sete pilares culturais como colunas numéricas por data.
-- As seções `Classificacao`, `CHAVE`, `GROW / PDI` e `SWOT` exibem abas internas por propriedade, cada uma com tabela `Data | Propriedade`, com primeira linha editável e histórico somente leitura.
+- As seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` exibem abas internas por propriedade, cada uma com tabela `Data | Propriedade`, com primeira linha editável e histórico somente leitura.
 - A seção `Informacoes Pessoais` é exibida em três colunas com distribuição fixa: coluna 1 (dados cadastrais e carreira), coluna 2 (`Gostos pessoais` e `Red Flags`) e coluna 3 (`BIO`).
 - O Radar Cultural da visão individual exibe as sete dimensões culturais, lista todas as datas disponíveis em dropdown e atualiza ao trocar a data via seleção ou scroll do mouse.
 - A atualização do Radar Cultural da visão individual ocorre com animação de transição entre valores.
@@ -203,7 +203,7 @@ Etapas:
 
 ## 9. Métricas de Sucesso
 
-- **Métrica Primária:** % de liderados com histórico completo e atualizado nas principais seções (Informações Pessoais, CHAVE, GROW/PDI, SWOT, Classificação, Feedbacks, 1:1).
+- **Métrica Primária:** % de liderados com histórico completo e atualizado nas principais seções (Informações Pessoais, CHAVE, GROW/PDI, SWOT, Classificação de Perfil, Feedbacks, 1:1).
   - Meta inicial: 90% dos liderados com todas as seções preenchidas após 3 meses de uso.
 - **Métrica Secundária:** Tempo médio entre o registro de um novo dado e sua consulta posterior (indicador de fluidez e utilidade do sistema).
   - Meta: < 10 segundos em 95% dos casos.
@@ -261,7 +261,7 @@ Etapas:
 
 - **Fonte de referência do modelo:** planilha `docs/Diretrizes de gestão/Nome - XRay.xlsx` e estrutura validada ao longo deste PRD.
 - **Técnicas de gestão de apoio:** materiais da pasta `docs/Diretrizes de gestão/` (CHAVE, GROW/STAR, Nine Box, conflitos, empoderamento, etc.) como referência conceitual, sem obrigação de implementar todos os frameworks na V1.
-- **Alinhamento da prototipação validada:** dashboard com cards de resumo por liderado em lista horizontal, visão individual com abas, histórico tabular em `1:1`, `Feedbacks` e `Cultura`, histórico por propriedade em abas internas para `Classificacao`/`CHAVE`/`GROW / PDI`/`SWOT`, seção `Informacoes Pessoais` em 3 colunas e Radar Cultural com seletor de data.
+- **Alinhamento da prototipação validada:** dashboard com cards de resumo por liderado em lista horizontal, visão individual com abas, histórico tabular em `1:1`, `Feedbacks` e `Cultura`, histórico por propriedade em abas internas para `Classificação de Perfil`/`CHAVE`/`GROW / PDI`/`SWOT`, seção `Informacoes Pessoais` em 3 colunas e Radar Cultural com seletor de data.
 - **Comportamento de tooltip validado:** tooltip textual sem título fixo e sem bullets; duplo clique no ícone de informação abre modal para editar o conteúdo, com preload do texto atual.
 - **Comportamento do Radar Cultural:** no dashboard, cada card mostra a última avaliação de forma estática; na visão individual, há seleção de data por dropdown, troca por scroll do mouse e transição animada ao atualizar os dados.
 - **Diretriz de operação local:** esta versão não contempla autenticação, multiusuário ou integração externa; qualquer evolução nesses temas deve gerar revisão deste PRD.
