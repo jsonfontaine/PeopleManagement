@@ -3,7 +3,7 @@ using PeopleManagement.Application.Abstractions.Persistence;
 namespace PeopleManagement.Application.Features.Dashboard.ObterDashboard;
 
 /// <summary>
-/// Implementa a leitura do dashboard consolidado.
+/// Implementa o caso de uso de obtenção do dashboard consolidado.
 /// </summary>
 public sealed class ObterDashboardHandler : IObterDashboardHandler
 {
@@ -17,7 +17,7 @@ public sealed class ObterDashboardHandler : IObterDashboardHandler
     public async Task<ObterDashboardResponse> HandleAsync(ObterDashboardQuery query, CancellationToken cancellationToken)
     {
         var cards = await _dashboardRepository.ListarCardsAsync(cancellationToken);
-        return new ObterDashboardResponse(cards.OrderBy(x => x.Nome).ToArray());
+        return new ObterDashboardResponse(cards);
     }
 }
 

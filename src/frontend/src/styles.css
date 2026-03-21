@@ -286,25 +286,11 @@ textarea {
   padding-top: 10px;
 }
 
-.history-list {
-  margin: 8px 0 0;
-  padding-left: 16px;
-  color: #cbd5e1;
-}
-
 .history-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
   table-layout: fixed;
-}
-
-.facts-table .col-date {
-  width: 120px;
-}
-
-.facts-table .col-observacao {
-  width: auto;
 }
 
 .fields--prop-tabs {

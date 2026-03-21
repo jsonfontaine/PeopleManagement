@@ -113,18 +113,7 @@ const leaders = [
           ]
         }
       },
-      "Fatos e Observacoes": {
-        factHistory: [
-          {
-            data: "2026-03-09",
-            observacao: "Conduziu incidente critico com boa comunicacao e calma na coordenacao do time."
-          },
-          {
-            data: "2026-02-18",
-            observacao: "Facilitou alinhamento entre squads em contexto de dependencia critica."
-          }
-        ]
-      },
+      // 'Fatos e Observacoes' section removed
       Cultura: {
         cultureHistory: [
           {
@@ -865,40 +854,7 @@ function renderSections(leader) {
       if (historyBlock) {
         historyBlock.remove();
       }
-    } else if (sectionName === "Fatos e Observacoes") {
-      sectionNode.classList.add("single-column");
-      const history = getFactEntries(sectionData);
-      fieldsContainer.innerHTML = `
-        <table class="history-table facts-table">
-          <colgroup>
-            <col class="col-date" />
-            <col class="col-observacao" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Fato ou observacao</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="history-edit">
-              <td><input class="date-input" type="text" placeholder="2026-03-18" aria-label="Data do fato ou observacao" /></td>
-              <td><textarea placeholder="Registrar fato ou observacao relevante" aria-label="Fato ou observacao relevante" rows="2"></textarea></td>
-            </tr>
-            ${history.map((row) => `
-              <tr>
-                <td>${row.data || ""}</td>
-                <td>${row.observacao || ""}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      `;
-
-      const historyBlock = sectionNode.querySelector(".history");
-      if (historyBlock) {
-        historyBlock.remove();
-      }
+    // 'Fatos e Observacoes' section removed
     } else if (["Classificacao", "CHAVE", "GROW / PDI", "SWOT"].includes(sectionName)) {
       sectionNode.classList.add("single-column");
       fieldsContainer.classList.add("fields--prop-tabs");

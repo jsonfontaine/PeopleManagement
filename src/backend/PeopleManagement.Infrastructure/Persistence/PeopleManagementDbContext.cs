@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PeopleManagement.Infrastructure.Persistence.Entities;
 
 namespace PeopleManagement.Infrastructure.Persistence;
@@ -26,14 +27,26 @@ public sealed class PeopleManagementDbContext : DbContext
 
     public DbSet<TooltipEntity> Tooltips => Set<TooltipEntity>();
 
-    public DbSet<HistoricoAlteracaoEntity> HistoricoAlteracoes => Set<HistoricoAlteracaoEntity>();
+    public DbSet<DiscEntity> Discs => Set<DiscEntity>();
+
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var guidToStringConverter = new ValueConverter<string, Guid>(
+            v => Guid.Parse(v),
+            v => v.ToString()
+        );
         modelBuilder.Entity<LideradoEntity>(builder =>
         {
             builder.ToTable("Liderados");
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id)
+                .IsRequired()
+                .HasConversion(
+                    v => v, // string to string for EF
+                    v => v // string to string for EF
+                );
             builder.Property(x => x.Nome).IsRequired().HasMaxLength(200);
             builder.Property(x => x.DataCriacaoUtc).IsRequired();
             builder.HasIndex(x => x.Nome);
@@ -92,16 +105,13 @@ public sealed class PeopleManagementDbContext : DbContext
             builder.Property(x => x.Texto).IsRequired();
         });
 
-        modelBuilder.Entity<HistoricoAlteracaoEntity>(builder =>
+        modelBuilder.Entity<DiscEntity>(builder =>
         {
-            builder.ToTable("HistoricoAlteracoes");
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Secao).IsRequired().HasMaxLength(150);
-            builder.Property(x => x.Campo).IsRequired().HasMaxLength(150);
-            builder.Property(x => x.ValorNovo).IsRequired();
-            builder.Property(x => x.UsuarioResponsavel).IsRequired().HasMaxLength(150);
-            builder.HasIndex(x => new { x.LideradoId, x.DataAlteracaoUtc });
+            builder.ToTable("Disc");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
         });
     }
 }
-

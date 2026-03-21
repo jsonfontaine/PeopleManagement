@@ -14,5 +14,13 @@ public interface ILideradoRepository
     Task<IReadOnlyCollection<Liderado>> ListarAsync(CancellationToken cancellationToken);
 
     Task<Liderado?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken);
-}
 
+    // DISC Value Object
+    Task SalvarDiscAsync(Guid lideradoId, string valor, DateOnly data);
+    Task<List<(string Valor, DateOnly Data)>> ListarDiscsAsync(Guid lideradoId);
+    Task RemoverDiscAsync(Guid lideradoId, DateOnly data);
+
+    // Update and Delete
+    Task AtualizarAsync(Liderado liderado, CancellationToken cancellationToken);
+    Task RemoverAsync(Guid id, CancellationToken cancellationToken);
+}

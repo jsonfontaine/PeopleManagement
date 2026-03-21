@@ -21,8 +21,8 @@ public sealed class SqliteOneOnOneRepository : IOneOnOneRepository
     {
         _dbContext.OneOnOnes.Add(new OneOnOneEntity
         {
-            Id = Guid.NewGuid(),
-            LideradoId = registro.LideradoId,
+            Id = Guid.NewGuid().ToString(),
+            LideradoId = registro.LideradoId.ToString(),
             Data = registro.Data,
             Resumo = registro.Resumo,
             TarefasAcordadas = registro.TarefasAcordadas,
@@ -34,13 +34,13 @@ public sealed class SqliteOneOnOneRepository : IOneOnOneRepository
 
     public async Task<IReadOnlyCollection<OneOnOneRegistro>> ListarPorLideradoAsync(Guid lideradoId, CancellationToken cancellationToken)
     {
+        var lideradoIdStr = lideradoId.ToString().ToLowerInvariant();
         var registros = await _dbContext.OneOnOnes
             .AsNoTracking()
-            .Where(x => x.LideradoId == lideradoId)
+            .Where(x => x.LideradoId.ToLower() == lideradoIdStr)
             .OrderByDescending(x => x.Data)
             .ToListAsync(cancellationToken);
 
-        return registros.Select(x => new OneOnOneRegistro(x.LideradoId, x.Data, x.Resumo, x.TarefasAcordadas, x.ProximosAssuntos)).ToArray();
+        return registros.Select(x => new OneOnOneRegistro(Guid.Parse(x.LideradoId), x.Data, x.Resumo, x.TarefasAcordadas, x.ProximosAssuntos)).ToArray();
     }
 }
-

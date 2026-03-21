@@ -1,3 +1,24 @@
+// Converte yyyy-MM-dd para dd/MM/yyyy
+function toPtBrDate(value) {
+  if (!value) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split("-");
+    return `${day}/${month}/${year}`;
+  }
+  return value;
+}
+
+// Converte dd/MM/yyyy para yyyy-MM-dd
+function ptBrToIsoDate(value) {
+  if (!value) return "";
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) {
+    const [, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+  }
+  return value;
+}
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const TAB_ORDER = [
@@ -6,7 +27,6 @@ const TAB_ORDER = [
   "CHAVE",
   "GROW / PDI",
   "SWOT",
-  "Fatos e Observacoes",
   "Cultura",
   "Feedbacks",
   "1:1"
@@ -72,12 +92,6 @@ const DEFAULT_TOOLTIPS = {
   redFlags: ["Existe algum fator de risco comportamental que merece atencao?"]
 };
 
-function normalize(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
 function formatDateDigitsToMask(rawValue) {
   const digits = String(rawValue || "").replace(/\D/g, "").slice(0, 8);
   if (digits.length <= 2) {
@@ -120,17 +134,6 @@ function toIsoDate(value) {
 
   const [, day, month, year] = match;
   return `${year}-${month}-${day}`;
-}
-
-function formatDateTime(value) {
-  if (!value) {
-    return "";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-  return date.toLocaleString("pt-BR");
 }
 
 async function requestJson(path, options) {
@@ -239,6 +242,7 @@ function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM
       value={currentValue}
       onChange={(event) => {
         const masked = formatDateDigitsToMask(event.target.value);
+        console.log('[DEBUG] MaskedDateInput onChange:', event.target.value, 'masked:', masked);
         if (isControlled) {
           onChange?.(masked);
           return;
@@ -285,10 +289,24 @@ function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft,
             <tbody>
               <tr className="history-edit">
                 <td className="date-cell">
-                  <MaskedDateInput className="date-input" ariaLabel={`Data do registro de ${group.label}`} disabled />
+                  {group.tooltipKey === "dataDisc" ? (
+                    <input
+                      type="text"
+                      className="date-input"
+                      aria-label={`Data do registro de ${group.label}`}
+                      value={classificacaoPerfilDraft.dataDisc || ""}
+                      onChange={e => {
+                        const nextValue = e.target.value;
+                        setClassificacaoPerfilDraft(draft => ({ ...draft, dataDisc: nextValue }));
+                      }}
+                      placeholder="dd/MM/yyyy"
+                    />
+                  ) : (
+                    <MaskedDateInput className="date-input" ariaLabel={`Data do registro de ${group.label}`} />
+                  )}
                 </td>
                 <td>
-                  {isClassificacaoPerfil ? (
+                  {isClassificacaoPerfil && group.tooltipKey !== "dataDisc" ? (
                     <textarea
                       rows="2"
                       placeholder={`Registrar ${group.label}`}
@@ -296,7 +314,7 @@ function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft,
                       onChange={e => setClassificacaoPerfilDraft(draft => ({ ...draft, [group.tooltipKey]: e.target.value }))}
                     />
                   ) : (
-                    <textarea rows="2" placeholder={`Registrar ${group.label}`} />
+                    <textarea rows="2" placeholder={`Registrar ${group.label}`} disabled={group.tooltipKey === "dataDisc"} />
                   )}
                 </td>
               </tr>
@@ -329,7 +347,6 @@ function App() {
   const [leaderReloadKey, setLeaderReloadKey] = useState(0);
   const [feedbacks, setFeedbacks] = useState([]);
   const [oneOnOnes, setOneOnOnes] = useState([]);
-  const [historico, setHistorico] = useState([]);
   const [cultureEntries, setCultureEntries] = useState([]);
   const [cultureIndex, setCultureIndex] = useState(0);
   const [radarValues, setRadarValues] = useState([0, 0, 0, 0, 0, 0, 0]);
@@ -370,7 +387,8 @@ function App() {
   const [classificacaoPerfilDraft, setClassificacaoPerfilDraft] = useState({
     disc: "",
     personalidade: "",
-    nineBox: ""
+    nineBox: "",
+    dataDisc: ""
   });
 
   useEffect(() => {
@@ -427,11 +445,10 @@ function App() {
       setError("");
 
       try {
-        const [visao, feedbackResponse, oneOnOneResponse, historicoResponse] = await Promise.all([
+        const [visao, feedbackResponse, oneOnOneResponse] = await Promise.all([
           requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`),
           requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`),
-          requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`),
-          requestJson(`/api/liderados/${selectedLideradoId}/historico/`)
+          requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`)
         ]);
 
         const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
@@ -448,7 +465,6 @@ function App() {
         setLeaderView(visao?.conteudo || null);
         setFeedbacks(feedbackResponse?.registros || []);
         setOneOnOnes(oneOnOneResponse?.registros || []);
-        setHistorico(historicoResponse?.registros || []);
         setCultureEntries(nextCultureEntries);
         setCultureIndex(0);
         setActiveTab(TAB_ORDER[0]);
@@ -466,6 +482,15 @@ function App() {
           gostosPessoais: informacoes?.gostosPessoais || "",
           redFlags: informacoes?.redFlags || "",
           bio: informacoes?.bio || ""
+        });
+
+        // Initialize classificacaoPerfilDraft from leaderView/classificacaoPerfil
+        const classificacao = visao?.conteudo?.classificacaoPerfil || visao?.conteudo || {};
+        setClassificacaoPerfilDraft({
+          disc: classificacao.disc || "",
+          personalidade: classificacao.perfil || classificacao.personalidade || "",
+          nineBox: classificacao.nineBox || "",
+          dataDisc: toDisplayDate(classificacao.dataDisc || classificacao.Data || classificacao.dataAtualizacaoUtc || "")
         });
       } catch (loadError) {
         if (active) {
@@ -556,44 +581,24 @@ function App() {
     };
   }, [dashboardCards, leaderView, selectedLideradoId]);
 
-  const factsHistory = useMemo(() => {
-    return historico
-      .filter((item) => normalize(item.secao).includes("fato") || normalize(item.campo).includes("observacao"))
-      .map((item) => ({ data: formatDateTime(item.dataAlteracaoUtc), valor: item.valorNovo }));
-  }, [historico]);
-
   const propertySectionData = useMemo(() => {
-    const buildRows = (sectionName, propertyLabel) => {
+    const buildRows = (sectionName) => {
       const config = PROPERTY_SECTION_CONFIG[sectionName];
       if (!config) {
         return [];
       }
-
-      const normalizedLabel = normalize(propertyLabel);
-      return historico
-        .filter((item) => {
-          const sectionMatch = config.secaoAliases.some((alias) => normalize(item.secao).includes(normalize(alias)));
-          if (!sectionMatch) {
-            return false;
-          }
-          return normalize(item.campo).includes(normalizedLabel);
-        })
-        .map((item) => ({
-          data: formatDateTime(item.dataAlteracaoUtc),
-          valor: item.valorNovo || ""
-        }));
+      return [];
     };
-
     return Object.fromEntries(
       Object.keys(PROPERTY_SECTION_CONFIG).map((sectionName) => [
         sectionName,
         PROPERTY_SECTION_CONFIG[sectionName].properties.map((property) => ({
           ...property,
-          rows: buildRows(sectionName, property.label)
+          rows: buildRows(sectionName)
         }))
       ])
     );
-  }, [historico]);
+  }, []);
 
   const dashboardCardsWithFallbackRadar = useMemo(() => {
     return dashboardCards.map((card) => {
@@ -758,9 +763,15 @@ function App() {
   }
 
   async function handleSaveClassificacaoPerfil() {
+            console.log('[DEBUG] Draft completo:', classificacaoPerfilDraft);
+            console.log('[DEBUG] Valor de dataDisc no envio:', classificacaoPerfilDraft.dataDisc, 'Tipo:', typeof classificacaoPerfilDraft.dataDisc);
     setError("");
     if (!selectedLideradoId) {
       setError("Nenhum liderado selecionado.");
+      return;
+    }
+    if (!classificacaoPerfilDraft.dataDisc || !/^\d{2}\/\d{2}\/\d{4}$/.test(classificacaoPerfilDraft.dataDisc)) {
+      setError("Por favor, preencha a data do DISC no formato dd/MM/aaaa.");
       return;
     }
     try {
@@ -769,7 +780,34 @@ function App() {
         body: JSON.stringify({
           perfil: classificacaoPerfilDraft.personalidade, // Fix: send as 'perfil' not 'personalidade'
           nineBox: classificacaoPerfilDraft.nineBox,
-          disc: classificacaoPerfilDraft.disc
+          disc: classificacaoPerfilDraft.disc,
+          Data: ptBrToIsoDate(classificacaoPerfilDraft.dataDisc)
+        })
+      });
+      setError("");
+      setLeaderReloadKey((k) => k + 1);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleSaveDisc() {
+    setError("");
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+    if (!classificacaoPerfilDraft.dataDisc || !/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}$/.test(classificacaoPerfilDraft.dataDisc)) {
+      setError("Por favor, preencha a data do DISC no formato dd/MM/aaaa.");
+      return;
+    }
+    try {
+      await requestJson(`/api/disc`, {
+        method: "POST",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          disc: classificacaoPerfilDraft.disc,
+          data: classificacaoPerfilDraft.dataDisc
         })
       });
       setError("");
@@ -865,28 +903,27 @@ function App() {
 
   return (
     <>
-      <header className="topbar" id="app-header" nome="app-header">
-        <div id="app-header-title" nome="app-header-title">
-          <h1 id="app-header-h1" nome="app-header-h1">People Management</h1>
-          <p className="subtitle" id="app-header-subtitle" nome="app-header-subtitle">Dashboard + visao individual</p>
+      <header className="topbar" id="app-header">
+        <div id="app-header-title">
+          <h1 id="app-header-h1">People Management</h1>
+          <p className="subtitle" id="app-header-subtitle">Dashboard + visao individual</p>
         </div>
       </header>
 
-      <main className="layout" id="app-main" nome="app-main">
-        {error ? <div className="panel error-panel" id="app-error-panel" nome="app-error-panel">{error}</div> : null}
+      <main className="layout" id="app-main">
+        {error ? <div className="panel error-panel" id="app-error-panel">{error}</div> : null}
 
-        <nav className={`breadcrumb ${view === "leader" ? "" : "hidden"}`} aria-label="Navegacao" id="app-breadcrumb" nome="app-breadcrumb">
-          <button type="button" className="breadcrumb-link" id="app-breadcrumb-dashboard" nome="app-breadcrumb-dashboard" onClick={() => setView("dashboard")}>Dashboard</button>
-          <span className="breadcrumb-sep" id="app-breadcrumb-sep" nome="app-breadcrumb-sep">|</span>
+        <nav className={`breadcrumb ${view === "leader" ? "" : "hidden"}`} aria-label="Navegacao" id="app-breadcrumb">
+          <button type="button" className="breadcrumb-link" id="app-breadcrumb-dashboard" onClick={() => setView("dashboard")}>Dashboard</button>
+          <span className="breadcrumb-sep" id="app-breadcrumb-sep">|</span>
           <select
             className="radar-date"
             id="app-breadcrumb-liderado-select"
-            nome="app-breadcrumb-liderado-select"
             value={selectedLideradoId}
             onChange={(event) => setSelectedLideradoId(event.target.value)}
           >
             {liderados.map((liderado) => (
-              <option key={liderado.id} value={liderado.id} id={`app-breadcrumb-liderado-option-${liderado.id}`} nome={`app-breadcrumb-liderado-option-${liderado.id}`}>
+              <option key={liderado.id} value={liderado.id} id={`app-breadcrumb-liderado-option-${liderado.id}`}>
                 {liderado.nome}
               </option>
             ))}
@@ -1320,46 +1357,7 @@ function App() {
                 </section>
               ) : null}
 
-              {activeTab === "Fatos e Observacoes" ? (
-                <section className="panel section single-column">
-                  <div className="panel-header">
-                    <h3 className="section-title">Fatos e Observacoes</h3>
-                    <button
-                      type="button"
-                      className="btn ghost small"
-                      onClick={() => handleSaveSectionWithoutEndpoint("Fatos e Observacoes")}
-                    >
-                      Salvar
-                    </button>
-                  </div>
-                  <div className="fields">
-                    <table className="history-table facts-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>Data</th>
-                          <th>Fato ou observacao</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="history-edit">
-                          <td className="date-cell">
-                            <MaskedDateInput className="date-input" ariaLabel="Data do fato ou observacao" />
-                          </td>
-                          <td>
-                            <textarea rows="2" placeholder="Registrar fato ou observacao relevante" />
-                          </td>
-                        </tr>
-                        {factsHistory.map((row) => (
-                          <tr key={`${row.data}-${row.valor}`}>
-                            <td>{row.data}</td>
-                            <td>{row.valor}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              ) : null}
+              {/* Fatos e Observacoes tab removed */}
 
               {["Classificacao de Perfil", "CHAVE", "GROW / PDI", "SWOT"].includes(activeTab) ? (
                 <section className="panel section single-column">

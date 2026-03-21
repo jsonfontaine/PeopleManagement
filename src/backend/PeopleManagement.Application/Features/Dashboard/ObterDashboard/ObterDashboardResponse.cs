@@ -3,7 +3,7 @@ using PeopleManagement.Application.Abstractions.Models;
 namespace PeopleManagement.Application.Features.Dashboard.ObterDashboard;
 
 /// <summary>
-/// Resposta com os cards consolidados do dashboard.
+/// Resposta do dashboard com os cards de resumo dos liderados.
 /// </summary>
 public sealed record ObterDashboardResponse(IReadOnlyCollection<DashboardCardProjection> Cards);
 

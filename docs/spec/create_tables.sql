@@ -108,10 +108,10 @@ CREATE TABLE ProximosPassos (
 
 -- Tabela: DISC
 CREATE TABLE DISC (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
     IdLiderado TEXT NOT NULL,
     Valor TEXT,
     Data DATE,
+    PRIMARY KEY (IdLiderado, Data),
     FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
 );
 

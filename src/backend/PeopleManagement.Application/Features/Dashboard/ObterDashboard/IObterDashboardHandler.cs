@@ -1,7 +1,7 @@
 namespace PeopleManagement.Application.Features.Dashboard.ObterDashboard;
 
 /// <summary>
-/// Contrato da query de dashboard.
+/// Contrato do caso de uso de obtenção do dashboard.
 /// </summary>
 public interface IObterDashboardHandler
 {

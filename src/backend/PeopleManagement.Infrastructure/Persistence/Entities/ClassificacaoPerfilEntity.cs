@@ -5,7 +5,7 @@ namespace PeopleManagement.Infrastructure.Persistence.Entities;
 /// </summary>
 public sealed class ClassificacaoPerfilEntity
 {
-    public Guid LideradoId { get; set; }
+    public string LideradoId { get; set; } = string.Empty;
 
     public string Perfil { get; set; } = string.Empty;
 

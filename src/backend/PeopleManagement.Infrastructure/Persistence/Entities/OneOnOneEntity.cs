@@ -5,9 +5,9 @@ namespace PeopleManagement.Infrastructure.Persistence.Entities;
 /// </summary>
 public sealed class OneOnOneEntity
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
-    public Guid LideradoId { get; set; }
+    public string LideradoId { get; set; } = string.Empty;
 
     public DateOnly Data { get; set; }
 

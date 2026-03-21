@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 using PeopleManagement.Application.Abstractions.Persistence;
 using PeopleManagement.Infrastructure.Persistence;
 using PeopleManagement.Infrastructure.Persistence.Repositories;
+using Microsoft.Data.Sqlite;
+using System.Data;
 
 namespace PeopleManagement.Infrastructure.DependencyInjection;
 
@@ -17,17 +20,20 @@ public static class InfrastructureServiceCollectionExtensions
         var connectionString = BuildConnectionString(configuration, contentRootPath);
 
         services.AddDbContext<PeopleManagementDbContext>(options => options.UseSqlite(connectionString));
+        services.AddScoped<IDbConnection>(_ => new SqliteConnection(connectionString));
         services.AddScoped<ILideradoRepository, SqliteLideradoRepository>();
         services.AddScoped<IDashboardRepository, SqliteDashboardRepository>();
-        services.AddScoped<IVisaoIndividualRepository, SqliteVisaoIndividualRepository>();
+        // Removidos repositórios de features excluídas
         services.AddScoped<IFeedbackRepository, SqliteFeedbackRepository>();
         services.AddScoped<IOneOnOneRepository, SqliteOneOnOneRepository>();
-        services.AddScoped<IClassificacaoPerfilRepository, SqliteClassificacaoPerfilRepository>();
-        services.AddScoped<ICulturaRepository, SqliteCulturaRepository>();
-        services.AddScoped<ITooltipRepository, SqliteTooltipRepository>();
         services.AddScoped<IInformacoesPessoaisRepository, SqliteInformacoesPessoaisRepository>();
-        services.AddScoped<IHistoricoAlteracaoRepository, SqliteHistoricoAlteracaoRepository>();
+
         services.AddScoped<IUsuarioContexto, UsuarioContextoPadrao>();
+        services.AddScoped<PeopleManagement.Application.Abstractions.Persistence.IConhecimentoRepository, PeopleManagement.Infrastructure.Persistence.Repositories.SqliteConhecimentoRepository>();
+        services.AddScoped<IHabilidadeRepository, SqliteHabilidadeRepository>();
+        services.AddScoped<IAtitudeRepository, SqliteAtitudeRepository>();
+        services.AddScoped<IValorRepository, SqliteValorRepository>();
+        // services.AddScoped<IDiscRepository, SqliteDiscRepository>(); // Repositório obsoleto, não registrar mais
 
         return services;
     }
@@ -58,4 +64,3 @@ public static class InfrastructureServiceCollectionExtensions
         return $"Data Source={dbPath}";
     }
 }
-

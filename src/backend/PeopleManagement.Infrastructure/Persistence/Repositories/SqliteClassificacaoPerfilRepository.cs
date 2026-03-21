@@ -19,14 +19,14 @@ public sealed class SqliteClassificacaoPerfilRepository : IClassificacaoPerfilRe
 
     public async Task<ClassificacaoPerfilRegistro?> ObterAsync(Guid lideradoId, CancellationToken cancellationToken)
     {
+        var idStr = lideradoId.ToString();
         var entity = await _dbContext.ClassificacoesPerfil
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.LideradoId == lideradoId, cancellationToken);
-
+            .FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
         return entity is null
             ? null
             : new ClassificacaoPerfilRegistro(
-                entity.LideradoId,
+                Guid.Parse(entity.LideradoId),
                 entity.Perfil,
                 entity.NineBox,
                 entity.Disc,
@@ -35,21 +35,18 @@ public sealed class SqliteClassificacaoPerfilRepository : IClassificacaoPerfilRe
 
     public async Task SalvarAsync(ClassificacaoPerfilRegistro registro, CancellationToken cancellationToken)
     {
+        var idStr = registro.LideradoId.ToString();
         var entity = await _dbContext.ClassificacoesPerfil
-            .FirstOrDefaultAsync(x => x.LideradoId == registro.LideradoId, cancellationToken);
-
+            .FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
         if (entity is null)
         {
-            entity = new ClassificacaoPerfilEntity { LideradoId = registro.LideradoId };
+            entity = new ClassificacaoPerfilEntity { LideradoId = idStr };
             _dbContext.ClassificacoesPerfil.Add(entity);
         }
-
         entity.Perfil = registro.Perfil;
         entity.NineBox = registro.NineBox;
         entity.Disc = registro.Disc;
         entity.DataAtualizacaoUtc = registro.DataAtualizacaoUtc;
-
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
-

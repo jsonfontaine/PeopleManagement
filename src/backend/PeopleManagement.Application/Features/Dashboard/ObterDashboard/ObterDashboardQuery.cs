@@ -1,7 +1,7 @@
 namespace PeopleManagement.Application.Features.Dashboard.ObterDashboard;
 
 /// <summary>
-/// Query para recuperar a visao consolidada do dashboard.
+/// Query para obter os dados do dashboard.
 /// </summary>
-public sealed record ObterDashboardQuery;
+public sealed record ObterDashboardQuery();
 

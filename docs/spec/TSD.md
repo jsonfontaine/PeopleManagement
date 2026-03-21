@@ -50,18 +50,18 @@ Por favor, revise a tabela acima e confirme se os serviços de aplicação estã
 
 
 - (Os campos Nome, Data de Nascimento, Estado Civil, Quantidade de Filhos, Data de Contratação, Cargo, Data de Início no Cargo, Aspiração, Gostos Pessoais, BIO e Red Flags são propriedades simples da entidade Liderado e não possuem histórico.)
-- **Conhecimento**: { idLiderado: string, valor: string, data: date }
-- **Habilidade**: { idLiderado: string, valor: string, data: date }
-- **Atitude**: { idLiderado: string, valor: string, data: date }
-- **Valor**: { idLiderado: string, valor: string, data: date }
-- **Expectativa**: { idLiderado: string, valor: string, data: date }
-- **Metas**: { idLiderado: string, valor: string, data: date }
-- **Situacao Atual**: { idLiderado: string, valor: string, data: date }
-- **Opcoes**: { idLiderado: string, valor: string, data: date }
-- **Proximos Passos**: { idLiderado: string, valor: string, data: date }
-- **DISC**: { idLiderado: string, valor: string, data: date }
-- **Personalidade**: { idLiderado: string, valor: string, data: date }
-- **NineBox**: { idLiderado: string, valor: string, data: date }
+- **Conhecimento**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Habilidade**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Atitude**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Valor**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Expectativa**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Metas**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Situacao Atual**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Opcoes**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Proximos Passos**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **DISC**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Personalidade**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **NineBox**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
 - **Cultura Genial**: {
   idLiderado: string,
   protagonismo: number,
@@ -75,13 +75,8 @@ Por favor, revise a tabela acima e confirme se os serviços de aplicação estã
 }
 - **Feedback**: { idLiderado: string, conteudo: string, polaridade: string, receptividade: string, data: date }
 - **1:1**: { idLiderado: string, resumo: string, tarefas: string, proximos_assuntos: string, data: date }
-- **Fortaleza**: { idLiderado: string, valor: string, data: date }
-- **Oportunidade**: { idLiderado: string, valor: string, data: date }
-- **Fraqueza**: { idLiderado: string, valor: string, data: date }
-- **Ameaça**: { idLiderado: string, valor: string, data: date }
-- **Fato/Observação**: { idLiderado: string, valor: string, data: date }
 
- Cada propriedade histórica do Liderado é representada por um Value Object, podendo ser agrupada logicamente por seção (Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, DISC, Personalidade, NineBox, Cultura Genial, Feedbacks, 1:1, Fortalezas, Oportunidades, Fraquezas, Ameaças, etc.).
+Cada propriedade histórica do Liderado é representada por um Value Object. Apenas `1:1`, `Feedbacks` e `Cultura` são Value Objects compostos, gravados juntos, com obrigatoriedade de preenchimento conjunto e tabela própria. Todos os outros Value Objects individuais (DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças) também possuem tabela própria e podem ser gravados individualmente, sem obrigatoriedade de preenchimento conjunto.
 
 
 ### Agregados
@@ -210,6 +205,7 @@ A modelagem de dados segue o domínio definido nas etapas anteriores, refletindo
   - IdLiderado: GUID (FK)
   - Valor: string
   - Data: date
+  - Cada Value Object individual possui sua própria tabela no banco de dados.
 
 - **CulturaGenial**
   - IdLiderado: GUID (FK)
@@ -270,6 +266,7 @@ erDiagram
 
 ### Observações
 - Todos os históricos são vinculados ao Liderado por IdLiderado.
+- Apenas `1:1`, `Feedbacks` e `Cultura` são gravados como Value Objects compostos, com obrigatoriedade de preenchimento conjunto e tabela própria. Todos os outros Value Objects individuais (DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças) também possuem tabela própria e podem ser gravados individualmente.
 - Propriedade serve como metadado para campos dinâmicos e tooltips.
 - Tipos de dados podem ser ajustados conforme necessidade do ORM/EF Core.
 - O modelo físico pode ser refinado durante a implementação, mantendo rastreabilidade e performance.
@@ -578,3 +575,23 @@ Garantir que o sistema atende aos requisitos funcionais e não funcionais, cobri
 ---
 
 Essas etapas garantem que o projeto está pronto para iniciar o desenvolvimento, minimizando riscos e alinhando expectativas.
+
+### Decisão de Identificadores nas Tabelas
+
+Apenas as tabelas **Liderado** e **Propriedade** possuem coluna de identificador único (Id). Todas as demais tabelas de Value Objects históricos (Conhecimento, Habilidade, Atitude, Valor, Expectativa, Metas, SituacaoAtual, Opcoes, ProximosPassos, DISC, Personalidade, NineBox, CulturaGenial, Feedback, OneOnOne, Fortaleza, Oportunidade, Fraqueza, Ameaca, FatoObservacao) não possuem coluna Id própria. Nessas tabelas, a identificação dos registros é feita pelo par (IdLiderado, Data) ou pelo conjunto de colunas de negócio, conforme aplicável.
+
+**Motivação:**
+- Simplifica a modelagem e evita chaves artificiais desnecessárias em históricos.
+- Garante rastreabilidade e unicidade dos registros históricos por contexto de negócio.
+- Alinha com o conceito de Value Object, onde a identidade é composta pelos valores dos atributos.
+
+**Exemplo de definição de tabela sem Id:**
+```sql
+CREATE TABLE Conhecimento (
+    IdLiderado TEXT NOT NULL,
+    Valor TEXT,
+    Data DATE,
+    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
+    PRIMARY KEY (IdLiderado, Data)
+);
+```

@@ -19,8 +19,8 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - Visão do liderado organizada por abas de seção (melhor uso de espaço e foco)
 - Na visão individual, o painel de resumo lateral exibe o nome do liderado como cabeçalho
 - Navegação estilo "caminho" (breadcrumb) no topo da área de conteúdo: `Dashboard | [combobox de liderados]`; o combobox permite trocar de liderado sem retornar ao dashboard
-- Seções `1:1`, `Feedbacks` e `Cultura` com histórico em formato de tabela + linha editável para novo registro
-- Seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` com histórico por propriedade, exibido em abas internas por propriedade (uma tabela por aba com `Data | Propriedade`)
+- Seções `1:1`, `Feedbacks` e `Cultura` são Value Objects compostos, gravados juntos, cada um com sua própria tabela e regras de obrigatoriedade de preenchimento dos campos principais.
+- Seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` possuem histórico por Value Object individual (ex: DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças), cada um gravado individualmente em sua própria tabela no banco de dados. Não há obrigatoriedade de preenchimento conjunto para essas propriedades.
 - Para tabelas de histórico por propriedade, a primeira linha é editável para novo registro e as linhas históricas são somente leitura
 - Seção `Informacoes Pessoais` com layout dedicado em 3 colunas e distribuição fixa de campos
 - Tooltip informativo sem título fixo e sem bullets, com quebra de linha simples
@@ -192,7 +192,7 @@ Etapas:
 - A seção `1:1` exibe histórico tabular, mantém uma linha editável para novo registro e não utiliza coluna lateral de histórico.
 - A seção `Feedbacks` segue o mesmo padrão de histórico tabular com linha editável para novo registro, incluindo o campo `Polaridade` como combobox com opções `Positivo` e `Negativo`.
 - A seção `Cultura` substitui `Avaliações Gerais` e exibe os sete pilares culturais como colunas numéricas por data.
-- As seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` exibem abas internas por propriedade, cada uma com tabela `Data | Propriedade`, com primeira linha editável e histórico somente leitura.
+- As seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` exibem abas internas por Value Object individual, cada uma com tabela `Data | Propriedade`, com primeira linha editável e histórico somente leitura. Cada Value Object individual (DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças) possui sua própria tabela no banco de dados.
 - A seção `Informacoes Pessoais` é exibida em três colunas com distribuição fixa: coluna 1 (dados cadastrais e carreira), coluna 2 (`Gostos pessoais` e `Red Flags`) e coluna 3 (`BIO`).
 - O Radar Cultural da visão individual exibe as sete dimensões culturais, lista todas as datas disponíveis em dropdown e atualiza ao trocar a data via seleção ou scroll do mouse.
 - A atualização do Radar Cultural da visão individual ocorre com animação de transição entre valores.

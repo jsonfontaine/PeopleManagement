@@ -16,8 +16,8 @@ public sealed class ObterDashboardHandlerTests
             .Setup(x => x.ListarCardsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[]
             {
-                new DashboardCardProjection(Guid.NewGuid(), "Zeca", null, null, 0, 0, null, null),
-                new DashboardCardProjection(Guid.NewGuid(), "Ana", null, null, 0, 0, null, null)
+                new DashboardCardProjection(Guid.NewGuid().ToString(), "Zeca", null, null, 0, 0, null, null),
+                new DashboardCardProjection(Guid.NewGuid().ToString(), "Ana", null, null, 0, 0, null, null)
             });
 
         var handler = new ObterDashboardHandler(repository.Object);
@@ -27,4 +27,3 @@ public sealed class ObterDashboardHandlerTests
         response.Cards.Select(x => x.Nome).Should().ContainInOrder("Ana", "Zeca");
     }
 }
-

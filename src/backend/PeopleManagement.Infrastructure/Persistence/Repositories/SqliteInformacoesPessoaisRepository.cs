@@ -19,7 +19,8 @@ public sealed class SqliteInformacoesPessoaisRepository : IInformacoesPessoaisRe
 
     public async Task<InformacoesPessoais?> ObterAsync(Guid lideradoId, CancellationToken cancellationToken)
     {
-        var entity = await _dbContext.InformacoesPessoais.AsNoTracking().FirstOrDefaultAsync(x => x.LideradoId == lideradoId, cancellationToken);
+        var idStr = lideradoId.ToString();
+        var entity = await _dbContext.InformacoesPessoais.AsNoTracking().FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
         return entity is null
             ? null
             : new InformacoesPessoais(
@@ -38,13 +39,13 @@ public sealed class SqliteInformacoesPessoaisRepository : IInformacoesPessoaisRe
 
     public async Task SalvarAsync(Guid lideradoId, InformacoesPessoais informacoes, CancellationToken cancellationToken)
     {
-        var entity = await _dbContext.InformacoesPessoais.FirstOrDefaultAsync(x => x.LideradoId == lideradoId, cancellationToken);
-        if (entity is null)
+        var idStr = lideradoId.ToString();
+        var entity = await _dbContext.InformacoesPessoais.FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
+        if (entity == null)
         {
-            entity = new InformacoesPessoaisEntity { LideradoId = lideradoId };
+            entity = new InformacoesPessoaisEntity { LideradoId = idStr };
             _dbContext.InformacoesPessoais.Add(entity);
         }
-
         entity.Nome = informacoes.Nome;
         entity.DataNascimento = informacoes.DataNascimento;
         entity.EstadoCivil = informacoes.EstadoCivil;
@@ -56,14 +57,6 @@ public sealed class SqliteInformacoesPessoaisRepository : IInformacoesPessoaisRe
         entity.GostosPessoais = informacoes.GostosPessoais;
         entity.RedFlags = informacoes.RedFlags;
         entity.Bio = informacoes.Bio;
-
-        var liderado = await _dbContext.Liderados.FirstOrDefaultAsync(x => x.Id == lideradoId, cancellationToken);
-        if (liderado is not null)
-        {
-            liderado.Nome = informacoes.Nome;
-        }
-
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
-

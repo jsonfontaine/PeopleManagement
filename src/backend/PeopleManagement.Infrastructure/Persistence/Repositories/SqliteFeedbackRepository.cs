@@ -21,8 +21,8 @@ public sealed class SqliteFeedbackRepository : IFeedbackRepository
     {
         _dbContext.Feedbacks.Add(new FeedbackEntity
         {
-            Id = Guid.NewGuid(),
-            LideradoId = registro.LideradoId,
+            Id = Guid.NewGuid().ToString(),
+            LideradoId = registro.LideradoId.ToString(),
             Data = registro.Data,
             Conteudo = registro.Conteudo,
             Receptividade = registro.Receptividade,
@@ -34,13 +34,13 @@ public sealed class SqliteFeedbackRepository : IFeedbackRepository
 
     public async Task<IReadOnlyCollection<FeedbackRegistro>> ListarPorLideradoAsync(Guid lideradoId, CancellationToken cancellationToken)
     {
+        var lideradoIdStr = lideradoId.ToString().ToLowerInvariant();
         var registros = await _dbContext.Feedbacks
             .AsNoTracking()
-            .Where(x => x.LideradoId == lideradoId)
+            .Where(x => x.LideradoId.ToLower() == lideradoIdStr)
             .OrderByDescending(x => x.Data)
             .ToListAsync(cancellationToken);
 
-        return registros.Select(x => new FeedbackRegistro(x.LideradoId, x.Data, x.Conteudo, x.Receptividade, x.Polaridade)).ToArray();
+        return registros.Select(x => new FeedbackRegistro(Guid.Parse(x.LideradoId), x.Data, x.Conteudo, x.Receptividade, x.Polaridade)).ToArray();
     }
 }
-
