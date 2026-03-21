@@ -104,6 +104,8 @@ public class LideradosController : ControllerBase
         Guid id,
         [FromServices] ILideradoRepository lideradoRepository,
         [FromServices] IInformacoesPessoaisRepository informacoesPessoaisRepository,
+        [FromServices] IClassificacaoPerfilRepository classificacaoPerfilRepository,
+        [FromServices] ICulturaRepository culturaRepository,
         [FromServices] IFeedbackRepository feedbackRepository,
         [FromServices] IOneOnOneRepository oneOnOneRepository,
         CancellationToken cancellationToken)
@@ -130,15 +132,17 @@ public class LideradosController : ControllerBase
 
         var feedbacks = await feedbackRepository.ListarPorLideradoAsync(id, cancellationToken);
         var oneOnOnes = await oneOnOneRepository.ListarPorLideradoAsync(id, cancellationToken);
+        var classificacaoPerfil = await classificacaoPerfilRepository.ObterAsync(id, cancellationToken);
+        var datasAvaliacaoCultura = await culturaRepository.ListarDatasDisponiveisAsync(id, cancellationToken);
 
         var projection = new VisaoIndividualProjection(
             id,
             informacoes,
-            null,
-            null,
+            classificacaoPerfil?.Perfil,
+            classificacaoPerfil?.NineBox,
             feedbacks.Count,
             oneOnOnes.Count,
-            Array.Empty<DateOnly>());
+            datasAvaliacaoCultura);
 
         return Ok(new ObterVisaoIndividualResponse(projection));
     }
@@ -204,11 +208,40 @@ public class LideradosController : ControllerBase
     [HttpPut("{id:guid}/informacoes-pessoais")]
     public async Task<IActionResult> AtualizarInformacoesPessoais(
         Guid id,
-        [FromBody] AtualizarInformacoesPessoaisRequest request
-        // Handler removido por limpeza de features
-        , CancellationToken cancellationToken)
+        [FromBody] AtualizarInformacoesPessoaisRequest request,
+        [FromServices] ILideradoRepository lideradoRepository,
+        [FromServices] IInformacoesPessoaisRepository informacoesPessoaisRepository,
+        CancellationToken cancellationToken)
     {
-        return NotFound("Endpoint removido por limpeza de features.");
+        var liderado = await lideradoRepository.ObterPorIdAsync(id, cancellationToken);
+        if (liderado is null)
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Nome))
+        {
+            return BadRequest(new { erro = "O nome do liderado e obrigatorio." });
+        }
+
+        liderado.AtualizarNome(request.Nome);
+        await lideradoRepository.AtualizarAsync(liderado, cancellationToken);
+
+        var informacoes = new InformacoesPessoais(
+            request.Nome,
+            request.DataNascimento,
+            request.EstadoCivil,
+            request.QuantidadeFilhos,
+            request.DataContratacao,
+            request.Cargo,
+            request.DataInicioCargo,
+            request.AspiracaoCarreira,
+            request.GostosPessoais,
+            request.RedFlags,
+            request.Bio);
+
+        await informacoesPessoaisRepository.SalvarAsync(id, informacoes, cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("{id:guid}/disc")]

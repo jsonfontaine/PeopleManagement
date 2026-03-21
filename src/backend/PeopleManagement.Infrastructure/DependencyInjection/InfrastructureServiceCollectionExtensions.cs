@@ -27,6 +27,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IFeedbackRepository, SqliteFeedbackRepository>();
         services.AddScoped<IOneOnOneRepository, SqliteOneOnOneRepository>();
         services.AddScoped<IInformacoesPessoaisRepository, SqliteInformacoesPessoaisRepository>();
+        services.AddScoped<IClassificacaoPerfilRepository, SqliteClassificacaoPerfilRepository>();
+        services.AddScoped<ICulturaRepository, SqliteCulturaRepository>();
 
         services.AddScoped<IUsuarioContexto, UsuarioContextoPadrao>();
         services.AddScoped<PeopleManagement.Application.Abstractions.Persistence.IConhecimentoRepository, PeopleManagement.Infrastructure.Persistence.Repositories.SqliteConhecimentoRepository>();

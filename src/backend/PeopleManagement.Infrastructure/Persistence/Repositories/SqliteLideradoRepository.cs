@@ -100,12 +100,12 @@ public sealed class SqliteLideradoRepository : ILideradoRepository
     }
     public async Task AtualizarAsync(Liderado liderado, CancellationToken cancellationToken)
     {
-        var idStr = liderado.Id.ToString();
-        var entity = await _dbContext.Liderados.FirstOrDefaultAsync(x => x.Id == idStr, cancellationToken);
+        var idStr = liderado.Id.ToString().ToLowerInvariant();
+        var entity = await _dbContext.Liderados
+            .FirstOrDefaultAsync(x => x.Id.ToLower() == idStr, cancellationToken);
         if (entity != null)
         {
             entity.Nome = liderado.Nome;
-            // Add other property updates here if needed
             _dbContext.Liderados.Update(entity);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -113,12 +113,43 @@ public sealed class SqliteLideradoRepository : ILideradoRepository
 
     public async Task RemoverAsync(Guid id, CancellationToken cancellationToken)
     {
-        var idStr = id.ToString();
-        var entity = await _dbContext.Liderados.FirstOrDefaultAsync(x => x.Id == idStr, cancellationToken);
-        if (entity != null)
+        var idStr = id.ToString().ToLowerInvariant();
+
+        var entity = await _dbContext.Liderados
+            .FirstOrDefaultAsync(x => x.Id.ToLower() == idStr, cancellationToken);
+
+        if (entity is null)
         {
-            _dbContext.Liderados.Remove(entity);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            return;
         }
+
+        var informacoesPessoais = await _dbContext.InformacoesPessoais
+            .Where(x => x.LideradoId.ToLower() == idStr)
+            .ToListAsync(cancellationToken);
+        var feedbacks = await _dbContext.Feedbacks
+            .Where(x => x.LideradoId.ToLower() == idStr)
+            .ToListAsync(cancellationToken);
+        var oneOnOnes = await _dbContext.OneOnOnes
+            .Where(x => x.LideradoId.ToLower() == idStr)
+            .ToListAsync(cancellationToken);
+        var classificacoesPerfil = await _dbContext.ClassificacoesPerfil
+            .Where(x => x.LideradoId.ToLower() == idStr)
+            .ToListAsync(cancellationToken);
+        var discs = await _dbContext.Discs
+            .Where(x => x.IdLiderado.ToLower() == idStr)
+            .ToListAsync(cancellationToken);
+        var culturas = await _dbContext.CulturaAvaliacoes
+            .Where(x => x.LideradoId == id)
+            .ToListAsync(cancellationToken);
+
+        _dbContext.InformacoesPessoais.RemoveRange(informacoesPessoais);
+        _dbContext.Feedbacks.RemoveRange(feedbacks);
+        _dbContext.OneOnOnes.RemoveRange(oneOnOnes);
+        _dbContext.ClassificacoesPerfil.RemoveRange(classificacoesPerfil);
+        _dbContext.Discs.RemoveRange(discs);
+        _dbContext.CulturaAvaliacoes.RemoveRange(culturas);
+        _dbContext.Liderados.Remove(entity);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

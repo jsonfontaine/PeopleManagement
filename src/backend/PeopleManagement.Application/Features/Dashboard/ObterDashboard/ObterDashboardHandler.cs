@@ -16,7 +16,9 @@ public sealed class ObterDashboardHandler : IObterDashboardHandler
 
     public async Task<ObterDashboardResponse> HandleAsync(ObterDashboardQuery query, CancellationToken cancellationToken)
     {
-        var cards = await _dashboardRepository.ListarCardsAsync(cancellationToken);
+        var cards = (await _dashboardRepository.ListarCardsAsync(cancellationToken))
+            .OrderBy(x => x.Nome)
+            .ToArray();
         return new ObterDashboardResponse(cards);
     }
 }

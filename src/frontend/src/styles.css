@@ -111,6 +111,13 @@ h4 {
   color: #fecaca;
 }
 
+.error-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .sticky {
   position: sticky;
   top: 84px;
@@ -454,6 +461,16 @@ textarea {
 .btn.small {
   padding: 6px 10px;
   font-size: 12px;
+}
+
+.btn.danger {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.btn.danger:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 
 .radar {

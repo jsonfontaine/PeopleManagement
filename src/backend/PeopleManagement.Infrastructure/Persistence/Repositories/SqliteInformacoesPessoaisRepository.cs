@@ -19,8 +19,10 @@ public sealed class SqliteInformacoesPessoaisRepository : IInformacoesPessoaisRe
 
     public async Task<InformacoesPessoais?> ObterAsync(Guid lideradoId, CancellationToken cancellationToken)
     {
-        var idStr = lideradoId.ToString();
-        var entity = await _dbContext.InformacoesPessoais.AsNoTracking().FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
+        var idStr = lideradoId.ToString().ToLowerInvariant();
+        var entity = await _dbContext.InformacoesPessoais
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
         return entity is null
             ? null
             : new InformacoesPessoais(
@@ -39,8 +41,9 @@ public sealed class SqliteInformacoesPessoaisRepository : IInformacoesPessoaisRe
 
     public async Task SalvarAsync(Guid lideradoId, InformacoesPessoais informacoes, CancellationToken cancellationToken)
     {
-        var idStr = lideradoId.ToString();
-        var entity = await _dbContext.InformacoesPessoais.FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
+        var idStr = lideradoId.ToString().ToLowerInvariant();
+        var entity = await _dbContext.InformacoesPessoais
+            .FirstOrDefaultAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
         if (entity == null)
         {
             entity = new InformacoesPessoaisEntity { LideradoId = idStr };

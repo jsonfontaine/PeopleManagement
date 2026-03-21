@@ -19,10 +19,10 @@ public sealed class SqliteClassificacaoPerfilRepository : IClassificacaoPerfilRe
 
     public async Task<ClassificacaoPerfilRegistro?> ObterAsync(Guid lideradoId, CancellationToken cancellationToken)
     {
-        var idStr = lideradoId.ToString();
+        var idStr = lideradoId.ToString().ToLowerInvariant();
         var entity = await _dbContext.ClassificacoesPerfil
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
+            .FirstOrDefaultAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
         return entity is null
             ? null
             : new ClassificacaoPerfilRegistro(
@@ -35,9 +35,9 @@ public sealed class SqliteClassificacaoPerfilRepository : IClassificacaoPerfilRe
 
     public async Task SalvarAsync(ClassificacaoPerfilRegistro registro, CancellationToken cancellationToken)
     {
-        var idStr = registro.LideradoId.ToString();
+        var idStr = registro.LideradoId.ToString().ToLowerInvariant();
         var entity = await _dbContext.ClassificacoesPerfil
-            .FirstOrDefaultAsync(x => x.LideradoId == idStr, cancellationToken);
+            .FirstOrDefaultAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
         if (entity is null)
         {
             entity = new ClassificacaoPerfilEntity { LideradoId = idStr };

@@ -651,6 +651,43 @@ function App() {
     }
   }
 
+  async function handleDeleteLiderado() {
+    if (!selectedLideradoId) {
+      return;
+    }
+
+    const confirmado = window.confirm(
+      `Tem certeza que deseja excluir o liderado "${selectedLideradoNome}"? Esta acao nao pode ser desfeita.`
+    );
+
+    if (!confirmado) {
+      return;
+    }
+
+    try {
+      await requestJson(`/api/liderados/${selectedLideradoId}`, {
+        method: "DELETE"
+      });
+
+      const [dashboard, lideradosList] = await Promise.all([
+        requestJson("/api/dashboard/"),
+        requestJson("/api/liderados/")
+      ]);
+
+      const cards = dashboard?.cards || [];
+      const nextLiderados = lideradosList || [];
+      const nextId = cards[0]?.lideradoId || nextLiderados[0]?.id || "";
+
+      setDashboardCards(cards);
+      setLiderados(nextLiderados);
+      setSelectedLideradoId(nextId ? String(nextId) : "");
+      setView("dashboard");
+      setLeaderReloadKey((value) => value + 1);
+    } catch (deleteError) {
+      setError(deleteError.message);
+    }
+  }
+
   async function handleSaveInformacoesPessoais() {
     if (!selectedLideradoId) {
       return;
@@ -911,7 +948,21 @@ function App() {
       </header>
 
       <main className="layout" id="app-main">
-        {error ? <div className="panel error-panel" id="app-error-panel">{error}</div> : null}
+        {error ? (
+          <div className="panel error-panel" id="app-error-panel">
+            <div className="error-panel-header">
+              <span>{error}</span>
+              <button
+                type="button"
+                className="btn ghost small"
+                aria-label="Fechar mensagem de erro"
+                onClick={() => setError("")}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <nav className={`breadcrumb ${view === "leader" ? "" : "hidden"}`} aria-label="Navegacao" id="app-breadcrumb">
           <button type="button" className="breadcrumb-link" id="app-breadcrumb-dashboard" onClick={() => setView("dashboard")}>Dashboard</button>
@@ -983,7 +1034,12 @@ function App() {
         <section id="leaderView" className={`view ${view === "leader" ? "" : "hidden"}`}>
           <aside className="left-column">
             <div className="panel sticky">
-              <h2>{selectedLideradoNome}</h2>
+              <div className="panel-header">
+                <h2>{selectedLideradoNome}</h2>
+                <button type="button" className="btn danger small" onClick={handleDeleteLiderado}>
+                  Excluir
+                </button>
+              </div>
               <div className="summary">
                 <div className="kpi">
                   <div className="kpi-label">Perfil</div>
