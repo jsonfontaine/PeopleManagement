@@ -1,12 +1,14 @@
-using System;
-using PeopleManagement.Domain.Liderados;
+namespace PeopleManagement.Infrastructure.Persistence.Entities;
 
-namespace PeopleManagement.Infrastructure.Persistence.Entities
+/// <summary>
+/// Registro persistido de DISC (value object) por liderado e data.
+/// </summary>
+public sealed class DiscEntity
 {
-    public class DiscEntity
-    {
-        public string IdLiderado { get; set; }
-        public string Valor { get; set; }
-        public string Data { get; set; } // formato yyyy-MM-dd
-    }
+    public string IdLiderado { get; set; } = string.Empty;
+
+    public string Valor { get; set; } = string.Empty;
+
+    // Formato ISO yyyy-MM-dd para chave composta estável em SQLite.
+    public string Data { get; set; } = string.Empty;
 }

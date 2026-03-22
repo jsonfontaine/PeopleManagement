@@ -1,55 +1,76 @@
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using PeopleManagement.Application.Abstractions.Models;
 using PeopleManagement.Application.Abstractions.Persistence;
-using PeopleManagement.Domain.Liderados;
+using PeopleManagement.Infrastructure.Persistence.Entities;
 
-namespace PeopleManagement.Infrastructure.Persistence.Repositories
+namespace PeopleManagement.Infrastructure.Persistence.Repositories;
+
+/// <summary>
+/// Repositorio SQLite da feature DISC.
+/// </summary>
+public sealed class SqliteDiscRepository : IDiscRepository
 {
-    // Classe obsoleta, não utilizar mais
-    public class SqliteDiscRepository : IDiscRepository
+    private readonly PeopleManagementDbContext _context;
+
+    public SqliteDiscRepository(PeopleManagementDbContext context)
     {
-        private readonly PeopleManagementDbContext _context;
+        _context = context;
+    }
 
-        public SqliteDiscRepository(PeopleManagementDbContext context)
-        {
-            _context = context;
-        }
+    public async Task<IReadOnlyCollection<DiscRegistro>> ListarPorLideradoAsync(Guid lideradoId, CancellationToken cancellationToken)
+    {
+        var lideradoIdStr = lideradoId.ToString().ToLowerInvariant();
 
-        public async Task<DiscEntity> GetByIdLideradoAsync(Guid idLiderado)
-        {
-            // Retorna o registro mais recente para o liderado
-            var idLideradoStr = idLiderado.ToString();
-            return await _context.Set<DiscEntity>()
-                .Where(d => d.IdLiderado == idLideradoStr)
-                .OrderByDescending(d => d.Data)
-                .FirstOrDefaultAsync();
-        }
+        var registros = await _context.Discs
+            .AsNoTracking()
+            .Where(d => d.IdLiderado.ToLower() == lideradoIdStr)
+            .OrderByDescending(d => d.Data)
+            .ToListAsync(cancellationToken);
 
-        public async Task SaveAsync(DiscEntity disc)
+        return registros
+            .Select(d => new DiscRegistro(Guid.Parse(d.IdLiderado), DateOnly.Parse(d.Data), d.Valor))
+            .ToArray();
+    }
+
+    public async Task SalvarAsync(DiscRegistro registro, CancellationToken cancellationToken)
+    {
+        var lideradoId = registro.LideradoId.ToString().ToLowerInvariant();
+        var data = registro.Data.ToString("yyyy-MM-dd");
+
+        var existente = await _context.Discs
+            .FirstOrDefaultAsync(d => d.IdLiderado.ToLower() == lideradoId && d.Data == data, cancellationToken);
+
+        if (existente is null)
         {
-            // Usa IdLiderado+Data como chave composta
-            var existing = await _context.Set<DiscEntity>()
-                .FirstOrDefaultAsync(d => d.IdLiderado == disc.IdLiderado && d.Data == disc.Data);
-            if (existing != null)
+            _context.Discs.Add(new DiscEntity
             {
-                existing.Valor = disc.Valor;
-                _context.Update(existing);
-            }
-            else
-            {
-                await _context.AddAsync(disc);
-            }
-            await _context.SaveChangesAsync();
+                IdLiderado = lideradoId,
+                Data = data,
+                Valor = registro.Valor
+            });
+        }
+        else
+        {
+            existente.Valor = registro.Valor;
         }
 
-        public async Task<List<DiscEntity>> ListByIdLideradoAsync(Guid idLiderado)
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task RemoverAsync(Guid lideradoId, DateOnly data, CancellationToken cancellationToken)
+    {
+        var lideradoIdStr = lideradoId.ToString().ToLowerInvariant();
+        var dataStr = data.ToString("yyyy-MM-dd");
+
+        var existente = await _context.Discs
+            .FirstOrDefaultAsync(d => d.IdLiderado.ToLower() == lideradoIdStr && d.Data == dataStr, cancellationToken);
+
+        if (existente is null)
         {
-            var idLideradoStr = idLiderado.ToString();
-            return await _context.Set<DiscEntity>()
-                .Where(d => d.IdLiderado == idLideradoStr)
-                .OrderByDescending(d => d.Data)
-                .ToListAsync();
+            return;
         }
+
+        _context.Discs.Remove(existente);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

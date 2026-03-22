@@ -55,49 +55,6 @@ public sealed class SqliteLideradoRepository : ILideradoRepository
         return liderado is null ? null : Liderado.Reconstituir(Guid.Parse(liderado.Id), liderado.Nome, liderado.DataCriacaoUtc);
     }
 
-    public async Task SalvarDiscAsync(Guid lideradoId, string valor, DateOnly data)
-    {
-        var entity = new Entities.DiscEntity
-        {
-            IdLiderado = lideradoId.ToString(),
-            Valor = valor,
-            Data = data.ToString("yyyy-MM-dd")
-        };
-        
-        var existing = await _dbContext.Discs.FirstOrDefaultAsync(d => d.IdLiderado == entity.IdLiderado && d.Data == entity.Data);
-        if (existing != null)
-        {
-            existing.Valor = valor;
-            _dbContext.Discs.Update(existing);
-        }
-        else
-        {
-            await _dbContext.Discs.AddAsync(entity);
-        }
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task<List<(string Valor, DateOnly Data)>> ListarDiscsAsync(Guid lideradoId)
-    {
-        var idLideradoStr = lideradoId.ToString();
-        return await _dbContext.Discs
-            .Where(d => d.IdLiderado == idLideradoStr)
-            .OrderByDescending(d => d.Data)
-            .Select(d => new ValueTuple<string, DateOnly>(d.Valor, DateOnly.Parse(d.Data)))
-            .ToListAsync();
-    }
-
-    public async Task RemoverDiscAsync(Guid lideradoId, DateOnly data)
-    {
-        var dataStr = data.ToString("yyyy-MM-dd");
-        var idLideradoStr = lideradoId.ToString();
-        var entity = await _dbContext.Discs.FirstOrDefaultAsync(d => d.IdLiderado == idLideradoStr && d.Data == dataStr);
-        if (entity != null)
-        {
-            _dbContext.Discs.Remove(entity);
-            await _dbContext.SaveChangesAsync();
-        }
-    }
     public async Task AtualizarAsync(Liderado liderado, CancellationToken cancellationToken)
     {
         var idStr = liderado.Id.ToString().ToLowerInvariant();

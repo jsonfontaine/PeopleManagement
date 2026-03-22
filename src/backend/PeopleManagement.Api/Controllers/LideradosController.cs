@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PeopleManagement.Application.Abstractions.Models;
 using PeopleManagement.Application.Abstractions.Persistence;
-using PeopleManagement.Application.Features.Liderados.AtualizarInformacoesPessoais;
 using PeopleManagement.Application.Features.Liderados.CriarLiderado;
 using PeopleManagement.Application.Features.Liderados.ListarLiderados;
 using PeopleManagement.Application.Features.Liderados.ObterLideradoPorId;
@@ -244,37 +243,39 @@ public class LideradosController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet("{id:guid}/disc")]
-    public async Task<IActionResult> ListarDiscs(
+    [HttpPut("{id:guid}/classificacao-perfil")]
+    public async Task<IActionResult> AtualizarClassificacaoPerfil(
         Guid id,
-        [FromServices] ILideradoRepository repo)
+        [FromBody] AtualizarClassificacaoPerfilRequest request,
+        [FromServices] ILideradoRepository lideradoRepository,
+        [FromServices] IClassificacaoPerfilRepository classificacaoPerfilRepository,
+        CancellationToken cancellationToken)
     {
-        var discs = await repo.ListarDiscsAsync(id);
-        return Ok(discs.Select(d => new { valor = d.Valor, data = d.Data }));
-    }
+        var liderado = await lideradoRepository.ObterPorIdAsync(id, cancellationToken);
+        if (liderado is null)
+        {
+            return NotFound();
+        }
 
-    [HttpPost("{id:guid}/disc")]
-    public async Task<IActionResult> SalvarDisc(
-        Guid id,
-        [FromBody] DiscRequest request,
-        [FromServices] ILideradoRepository repo)
-    {
-        await repo.SalvarDiscAsync(id, request.Valor, request.Data);
-        return Ok();
-    }
+        if (string.IsNullOrWhiteSpace(request.Perfil) || string.IsNullOrWhiteSpace(request.NineBox))
+        {
+            return BadRequest(new { erro = "Perfil e Nine Box sao obrigatorios." });
+        }
 
-    [HttpDelete("{id:guid}/disc")]
-    public async Task<IActionResult> RemoverDisc(
-        Guid id,
-        [FromBody] DiscRequest request,
-        [FromServices] ILideradoRepository repo)
-    {
-        await repo.RemoverDiscAsync(id, request.Data);
-        return Ok();
+        var classificacaoAtual = await classificacaoPerfilRepository.ObterAsync(id, cancellationToken);
+
+        await classificacaoPerfilRepository.SalvarAsync(
+            new ClassificacaoPerfilRegistro(
+                id,
+                request.Perfil.Trim(),
+                request.NineBox.Trim(),
+                classificacaoAtual?.Disc,
+                request.Data.ToDateTime(TimeOnly.MinValue)),
+            cancellationToken);
+
+        return NoContent();
     }
 }
-
-public record DiscRequest(string Valor, DateOnly Data);
 
 public sealed record CriarFeedbackRequest(DateOnly Data, string Conteudo, string Receptividade, string Polaridade);
 

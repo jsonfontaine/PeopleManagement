@@ -136,6 +136,15 @@ function toIsoDate(value) {
   return `${year}-${month}-${day}`;
 }
 
+function buildDiscDateErrorMessage(value) {
+  const typedValue = String(value || "").trim();
+  if (!typedValue) {
+    return "Informe a data do DISC no formato dd/MM/aaaa (ex.: 27/11/2025).";
+  }
+
+  return `Nao consegui entender a data "${typedValue}". Use o formato dd/MM/aaaa (ex.: 27/11/2025).`;
+}
+
 async function requestJson(path, options) {
   const response = await fetch(path, {
     headers: {
@@ -289,7 +298,16 @@ function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft,
             <tbody>
               <tr className="history-edit">
                 <td className="date-cell">
-                  {group.tooltipKey === "dataDisc" ? (
+                  {isClassificacaoPerfil ? (
+                    <MaskedDateInput
+                      className="date-input"
+                      ariaLabel={`Data do registro de ${group.label}`}
+                      value={classificacaoPerfilDraft.dataDisc || ""}
+                      onChange={(nextValue) =>
+                        setClassificacaoPerfilDraft((draft) => ({ ...draft, dataDisc: nextValue }))
+                      }
+                    />
+                  ) : group.tooltipKey === "dataDisc" ? (
                     <input
                       type="text"
                       className="date-input"
@@ -391,6 +409,9 @@ function App() {
     dataDisc: ""
   });
 
+  const [discHistorico, setDiscHistorico] = useState([]);
+  const prevLideradoIdRef = useRef(null);
+
   useEffect(() => {
     let active = true;
 
@@ -438,6 +459,9 @@ function App() {
       return;
     }
 
+    const isNewLiderado = selectedLideradoId !== prevLideradoIdRef.current;
+    prevLideradoIdRef.current = selectedLideradoId;
+
     let active = true;
 
     async function loadLeader() {
@@ -445,10 +469,11 @@ function App() {
       setError("");
 
       try {
-        const [visao, feedbackResponse, oneOnOneResponse] = await Promise.all([
+        const [visao, feedbackResponse, oneOnOneResponse, discResponse] = await Promise.all([
           requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`),
           requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`),
-          requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`)
+          requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`),
+          requestJson(`/api/disc/${selectedLideradoId}`)
         ]);
 
         const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
@@ -466,8 +491,12 @@ function App() {
         setFeedbacks(feedbackResponse?.registros || []);
         setOneOnOnes(oneOnOneResponse?.registros || []);
         setCultureEntries(nextCultureEntries);
-        setCultureIndex(0);
-        setActiveTab(TAB_ORDER[0]);
+        setDiscHistorico(discResponse?.registros || []);
+
+        if (isNewLiderado) {
+          setCultureIndex(0);
+          setActiveTab(TAB_ORDER[0]);
+        }
 
         const informacoes = visao?.conteudo?.informacoesPessoais;
         setPersonalForm({
@@ -582,10 +611,12 @@ function App() {
   }, [dashboardCards, leaderView, selectedLideradoId]);
 
   const propertySectionData = useMemo(() => {
-    const buildRows = (sectionName) => {
-      const config = PROPERTY_SECTION_CONFIG[sectionName];
-      if (!config) {
-        return [];
+    const buildRows = (sectionName, propertyKey) => {
+      if (sectionName === "Classificacao de Perfil" && propertyKey === "disc") {
+        return discHistorico.map((r) => ({
+          data: toDisplayDate(r.data),
+          valor: r.valor
+        }));
       }
       return [];
     };
@@ -594,11 +625,11 @@ function App() {
         sectionName,
         PROPERTY_SECTION_CONFIG[sectionName].properties.map((property) => ({
           ...property,
-          rows: buildRows(sectionName)
+          rows: buildRows(sectionName, property.tooltipKey)
         }))
       ])
     );
-  }, []);
+  }, [discHistorico]);
 
   const dashboardCardsWithFallbackRadar = useMemo(() => {
     return dashboardCards.map((card) => {
@@ -800,29 +831,44 @@ function App() {
   }
 
   async function handleSaveClassificacaoPerfil() {
-            console.log('[DEBUG] Draft completo:', classificacaoPerfilDraft);
-            console.log('[DEBUG] Valor de dataDisc no envio:', classificacaoPerfilDraft.dataDisc, 'Tipo:', typeof classificacaoPerfilDraft.dataDisc);
     setError("");
     if (!selectedLideradoId) {
       setError("Nenhum liderado selecionado.");
       return;
     }
-    if (!classificacaoPerfilDraft.dataDisc || !/^\d{2}\/\d{2}\/\d{4}$/.test(classificacaoPerfilDraft.dataDisc)) {
-      setError("Por favor, preencha a data do DISC no formato dd/MM/aaaa.");
+    const dataDiscTexto = String(classificacaoPerfilDraft.dataDisc || "").trim();
+    const dataDiscIso = toIsoDate(dataDiscTexto);
+    if (!dataDiscIso) {
+      setError(buildDiscDateErrorMessage(dataDiscTexto));
       return;
     }
     try {
       await requestJson(`/api/liderados/${selectedLideradoId}/classificacao-perfil`, {
         method: "PUT",
         body: JSON.stringify({
-          perfil: classificacaoPerfilDraft.personalidade, // Fix: send as 'perfil' not 'personalidade'
+          perfil: classificacaoPerfilDraft.personalidade,
           nineBox: classificacaoPerfilDraft.nineBox,
-          disc: classificacaoPerfilDraft.disc,
-          Data: ptBrToIsoDate(classificacaoPerfilDraft.dataDisc)
+          data: dataDiscIso
         })
       });
+
+      await requestJson(`/api/disc`, {
+        method: "POST",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          disc: classificacaoPerfilDraft.disc,
+          data: dataDiscTexto
+        })
+      });
+
+      // Refresh disc history immediately after save
+      const discResponse = await requestJson(`/api/disc/${selectedLideradoId}`);
+      setDiscHistorico(discResponse?.registros || []);
+
+      // Also refresh dashboard summary metrics without resetting the tab
+      await refreshCurrentLeader();
+
       setError("");
-      setLeaderReloadKey((k) => k + 1);
     } catch (e) {
       setError(e.message);
     }
@@ -834,8 +880,9 @@ function App() {
       setError("Nenhum liderado selecionado.");
       return;
     }
-    if (!classificacaoPerfilDraft.dataDisc || !/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}$/.test(classificacaoPerfilDraft.dataDisc)) {
-      setError("Por favor, preencha a data do DISC no formato dd/MM/aaaa.");
+    const dataDiscTexto = String(classificacaoPerfilDraft.dataDisc || "").trim();
+    if (!toIsoDate(dataDiscTexto)) {
+      setError(buildDiscDateErrorMessage(dataDiscTexto));
       return;
     }
     try {
@@ -844,7 +891,7 @@ function App() {
         body: JSON.stringify({
           lideradoId: selectedLideradoId,
           disc: classificacaoPerfilDraft.disc,
-          data: classificacaoPerfilDraft.dataDisc
+          data: dataDiscTexto
         })
       });
       setError("");

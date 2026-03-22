@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PeopleManagement.Infrastructure.Persistence.Entities;
 
 namespace PeopleManagement.Infrastructure.Persistence;
@@ -25,7 +24,6 @@ public sealed class PeopleManagementDbContext : DbContext
 
     public DbSet<CulturaAvaliacaoEntity> CulturaAvaliacoes => Set<CulturaAvaliacaoEntity>();
 
-    public DbSet<TooltipEntity> Tooltips => Set<TooltipEntity>();
 
     public DbSet<DiscEntity> Discs => Set<DiscEntity>();
 
@@ -33,10 +31,6 @@ public sealed class PeopleManagementDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var guidToStringConverter = new ValueConverter<string, Guid>(
-            v => Guid.Parse(v),
-            v => v.ToString()
-        );
         modelBuilder.Entity<LideradoEntity>(builder =>
         {
             builder.ToTable("Liderados");
@@ -98,12 +92,6 @@ public sealed class PeopleManagementDbContext : DbContext
             builder.HasIndex(x => new { x.LideradoId, x.Data }).IsUnique();
         });
 
-        modelBuilder.Entity<TooltipEntity>(builder =>
-        {
-            builder.ToTable("Tooltips");
-            builder.HasKey(x => x.ChaveCampo);
-            builder.Property(x => x.Texto).IsRequired();
-        });
 
         modelBuilder.Entity<DiscEntity>(builder =>
         {

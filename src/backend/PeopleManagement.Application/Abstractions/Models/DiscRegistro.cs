@@ -1,9 +1,9 @@
 namespace PeopleManagement.Application.Abstractions.Models;
 
 /// <summary>
-/// Registro de atitude de um liderado.
+/// Value Object de registro DISC por liderado e data.
 /// </summary>
-public sealed record AtitudeRegistro(
+public sealed record DiscRegistro(
     Guid LideradoId,
     DateOnly Data,
     string Valor);

@@ -1,41 +1,50 @@
-// Este serviço está obsoleto e não deve mais ser utilizado.
-// Toda manipulação de DISC deve ser feita via ILideradoRepository e Guid.
-// Arquivo mantido apenas para referência histórica.
-
-using System.Threading.Tasks;
-using PeopleManagement.Domain.Liderados;
 using PeopleManagement.Application.Abstractions.Persistence;
+using PeopleManagement.Application.Abstractions.Models;
+using PeopleManagement.Domain;
 
-namespace PeopleManagement.Application.Features.Disc
+namespace PeopleManagement.Application.Features.Disc;
+
+/// <summary>
+/// Servico de aplicacao da feature DISC.
+/// </summary>
+public sealed class DiscService : IDiscService
 {
-    public class DiscService
+    private readonly IDiscRepository _discRepository;
+    private readonly ILideradoRepository _lideradoRepository;
+
+    public DiscService(IDiscRepository discRepository, ILideradoRepository lideradoRepository)
     {
-        private readonly IDiscRepository _repository;
+        _discRepository = discRepository;
+        _lideradoRepository = lideradoRepository;
+    }
 
-        public DiscService(IDiscRepository repository)
+    public Task<IReadOnlyCollection<DiscRegistro>> ListarPorLideradoAsync(
+        Guid lideradoId,
+        CancellationToken cancellationToken)
+    {
+        return _discRepository.ListarPorLideradoAsync(lideradoId, cancellationToken);
+    }
+
+    public async Task SalvarAsync(Guid lideradoId, string valor, DateOnly data, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
         {
-            _repository = repository;
+            throw new DomainException("O valor DISC e obrigatorio.");
         }
 
-        public async Task<DiscEntity> GetDiscAsync(Guid idLiderado)
+        var liderado = await _lideradoRepository.ObterPorIdAsync(lideradoId, cancellationToken);
+        if (liderado is null)
         {
-            return await _repository.GetByIdLideradoAsync(idLiderado);
+            throw new DomainException("Liderado nao encontrado para registro DISC.");
         }
 
-        public async Task SaveDiscAsync(Guid idLiderado, string valor, string data)
-        {
-            var entity = new DiscEntity
-            {
-                IdLiderado = idLiderado.ToString(),
-                Valor = valor,
-                Data = data
-            };
-            await _repository.SaveAsync(entity);
-        }
+        await _discRepository.SalvarAsync(
+            new DiscRegistro(lideradoId, data, valor.Trim()),
+            cancellationToken);
+    }
 
-        public async Task<List<DiscEntity>> ListDiscsAsync(Guid idLiderado)
-        {
-            return await _repository.ListByIdLideradoAsync(idLiderado);
-        }
+    public Task RemoverAsync(Guid lideradoId, DateOnly data, CancellationToken cancellationToken)
+    {
+        return _discRepository.RemoverAsync(lideradoId, data, cancellationToken);
     }
 }

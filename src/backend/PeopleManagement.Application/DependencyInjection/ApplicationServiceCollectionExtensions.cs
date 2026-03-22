@@ -17,6 +17,7 @@ public static class ApplicationServiceCollectionExtensions
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IObterDashboardHandler, ObterDashboardHandler>();
+        services.AddScoped<IDiscService, DiscService>();
         services.AddScoped<ICriarLideradoHandler, CriarLideradoHandler>();
         services.AddScoped<IListarLideradosHandler, ListarLideradosHandler>();
         services.AddScoped<IObterLideradoPorIdHandler, ObterLideradoPorIdHandler>();
