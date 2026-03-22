@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using PeopleManagement.Application.Common;
 using PeopleManagement.Application.Features.Disc;
-using PeopleManagement.Domain;
 
 namespace PeopleManagement.Api.Controllers;
 
@@ -10,9 +10,13 @@ namespace PeopleManagement.Api.Controllers;
 public sealed class DiscController : ControllerBase
 {
     [HttpGet("{lideradoId:guid}")]
-    public async Task<IActionResult> Listar(Guid lideradoId, [FromServices] IDiscService discService, CancellationToken cancellationToken)
+    public async Task<IActionResult> Listar(
+        Guid lideradoId,
+        [FromServices] DiscService discService,
+        CancellationToken cancellationToken)
     {
-        var registros = await discService.ListarPorLideradoAsync(lideradoId, cancellationToken);
+        var registros = await discService.ListarAsync(lideradoId, cancellationToken);
+
         return Ok(new
         {
             registros = registros.Select(r => new
@@ -27,7 +31,7 @@ public sealed class DiscController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Salvar(
         [FromBody] SalvarDiscRequest request,
-        [FromServices] IDiscService discService,
+        [FromServices] DiscService discService,
         CancellationToken cancellationToken)
     {
         try
@@ -40,7 +44,7 @@ public sealed class DiscController : ControllerBase
             await discService.SalvarAsync(request.LideradoId, request.Disc, data, cancellationToken);
             return NoContent();
         }
-        catch (DomainException ex)
+        catch (RegraNegocioException ex)
         {
             return BadRequest(new { erro = ex.Message });
         }
@@ -49,7 +53,7 @@ public sealed class DiscController : ControllerBase
     [HttpDelete]
     public async Task<IActionResult> Remover(
         [FromBody] RemoverDiscRequest request,
-        [FromServices] IDiscService discService,
+        [FromServices] DiscService discService,
         CancellationToken cancellationToken)
     {
         if (!TryParseDate(request.Data, out var data))
@@ -58,6 +62,7 @@ public sealed class DiscController : ControllerBase
         }
 
         await discService.RemoverAsync(request.LideradoId, data, cancellationToken);
+
         return NoContent();
     }
 
@@ -71,5 +76,6 @@ public sealed class DiscController : ControllerBase
 public sealed record SalvarDiscRequest(Guid LideradoId, string Disc, string Data);
 
 public sealed record RemoverDiscRequest(Guid LideradoId, string Data);
+
 
 

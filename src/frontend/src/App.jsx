@@ -262,12 +262,23 @@ function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM
   );
 }
 
-function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil }) {
+function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil, propDrafts, onPropDraftChange, onActiveKeyChange }) {
   const [activePropertyIndex, setActivePropertyIndex] = useState(0);
 
   useEffect(() => {
     setActivePropertyIndex(0);
+    if (onActiveKeyChange && groups.length > 0) {
+      onActiveKeyChange(groups[0].tooltipKey);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
+
+  function handleTabClick(index) {
+    setActivePropertyIndex(index);
+    if (onActiveKeyChange) {
+      onActiveKeyChange(groups[index].tooltipKey);
+    }
+  }
 
   return (
     <div className="prop-tabs">
@@ -277,75 +288,76 @@ function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft,
             key={group.label}
             type="button"
             className={`prop-tab-btn ${index === activePropertyIndex ? "active" : ""}`}
-            onClick={() => setActivePropertyIndex(index)}
+            onClick={() => handleTabClick(index)}
           >
             {group.label}
           </button>
         ))}
       </div>
 
-      {groups.map((group, index) => (
-        <div key={group.label} className={`prop-tab-panel ${index === activePropertyIndex ? "active" : ""}`}>
-          <table className="history-table classification-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-            <thead>
-              <tr>
-                <th className="col-date" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>Data</th>
-                <th className="col-value">
-                  {group.label} {renderInfoIcon(group.label, group.tooltipKey)}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="history-edit">
-                <td className="date-cell">
-                  {isClassificacaoPerfil ? (
-                    <MaskedDateInput
-                      className="date-input"
-                      ariaLabel={`Data do registro de ${group.label}`}
-                      value={classificacaoPerfilDraft.dataDisc || ""}
-                      onChange={(nextValue) =>
-                        setClassificacaoPerfilDraft((draft) => ({ ...draft, dataDisc: nextValue }))
-                      }
-                    />
-                  ) : group.tooltipKey === "dataDisc" ? (
-                    <input
-                      type="text"
-                      className="date-input"
-                      aria-label={`Data do registro de ${group.label}`}
-                      value={classificacaoPerfilDraft.dataDisc || ""}
-                      onChange={e => {
-                        const nextValue = e.target.value;
-                        setClassificacaoPerfilDraft(draft => ({ ...draft, dataDisc: nextValue }));
-                      }}
-                      placeholder="dd/MM/yyyy"
-                    />
-                  ) : (
-                    <MaskedDateInput className="date-input" ariaLabel={`Data do registro de ${group.label}`} />
-                  )}
-                </td>
-                <td>
-                  {isClassificacaoPerfil && group.tooltipKey !== "dataDisc" ? (
-                    <textarea
-                      rows="2"
-                      placeholder={`Registrar ${group.label}`}
-                      value={classificacaoPerfilDraft[group.tooltipKey] || ""}
-                      onChange={e => setClassificacaoPerfilDraft(draft => ({ ...draft, [group.tooltipKey]: e.target.value }))}
-                    />
-                  ) : (
-                    <textarea rows="2" placeholder={`Registrar ${group.label}`} disabled={group.tooltipKey === "dataDisc"} />
-                  )}
-                </td>
-              </tr>
-              {group.rows.map((row) => (
-                <tr key={`${row.data}-${row.valor}`}>
-                  <td>{row.data}</td>
-                  <td>{row.valor}</td>
+      {groups.map((group, index) => {
+        const draft = propDrafts?.[group.tooltipKey] || { data: "", valor: "" };
+        return (
+          <div key={group.label} className={`prop-tab-panel ${index === activePropertyIndex ? "active" : ""}`}>
+            <table className="history-table classification-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <thead>
+                <tr>
+                  <th className="col-date" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>Data</th>
+                  <th className="col-value">
+                    {group.label} {renderInfoIcon(group.label, group.tooltipKey)}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+              </thead>
+              <tbody>
+                <tr className="history-edit">
+                  <td className="date-cell">
+                    {isClassificacaoPerfil ? (
+                      <MaskedDateInput
+                        className="date-input"
+                        ariaLabel={`Data do registro de ${group.label}`}
+                        value={classificacaoPerfilDraft.dataDisc || ""}
+                        onChange={(nextValue) =>
+                          setClassificacaoPerfilDraft((d) => ({ ...d, dataDisc: nextValue }))
+                        }
+                      />
+                    ) : (
+                      <MaskedDateInput
+                        className="date-input"
+                        ariaLabel={`Data do registro de ${group.label}`}
+                        value={draft.data || ""}
+                        onChange={(nextValue) => onPropDraftChange?.(group.tooltipKey, "data", nextValue)}
+                      />
+                    )}
+                  </td>
+                  <td>
+                    {isClassificacaoPerfil ? (
+                      <textarea
+                        rows="2"
+                        placeholder={`Registrar ${group.label}`}
+                        value={classificacaoPerfilDraft[group.tooltipKey] || ""}
+                        onChange={e => setClassificacaoPerfilDraft(d => ({ ...d, [group.tooltipKey]: e.target.value }))}
+                      />
+                    ) : (
+                      <textarea
+                        rows="2"
+                        placeholder={`Registrar ${group.label}`}
+                        value={draft.valor || ""}
+                        onChange={e => onPropDraftChange?.(group.tooltipKey, "valor", e.target.value)}
+                      />
+                    )}
+                  </td>
+                </tr>
+                {group.rows.map((row) => (
+                  <tr key={`${row.data}-${row.valor}`}>
+                    <td>{row.data}</td>
+                    <td>{row.valor}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -410,6 +422,9 @@ function App() {
   });
 
   const [discHistorico, setDiscHistorico] = useState([]);
+  const [propHistoricaEntries, setPropHistoricaEntries] = useState({});
+  const [propDrafts, setPropDrafts] = useState({});
+  const [activePropKeys, setActivePropKeys] = useState({});
   const prevLideradoIdRef = useRef(null);
 
   useEffect(() => {
@@ -476,6 +491,13 @@ function App() {
           requestJson(`/api/disc/${selectedLideradoId}`)
         ]);
 
+        const propTypes = ["conhecimentos", "habilidades", "atitudes", "valores", "expectativas",
+          "metas", "situacaoAtual", "opcoes", "proximosPassos",
+          "fortalezas", "oportunidades", "fraquezas", "ameacas"];
+        const propResponses = await Promise.all(
+          propTypes.map(tipo => requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`))
+        );
+
         const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
         const radarResponses = await Promise.all(
           datas.map((data) => requestJson(`/api/liderados/${selectedLideradoId}/cultura/radar?data=${data}`))
@@ -487,15 +509,25 @@ function App() {
 
         const nextCultureEntries = radarResponses.map((item) => item.radar).filter(Boolean);
 
+        const nextPropEntries = {};
+        propTypes.forEach((tipo, i) => {
+          nextPropEntries[tipo] = propResponses[i]?.registros || [];
+        });
+
         setLeaderView(visao?.conteudo || null);
         setFeedbacks(feedbackResponse?.registros || []);
         setOneOnOnes(oneOnOneResponse?.registros || []);
         setCultureEntries(nextCultureEntries);
         setDiscHistorico(discResponse?.registros || []);
+        setPropHistoricaEntries(nextPropEntries);
 
         if (isNewLiderado) {
           setCultureIndex(0);
           setActiveTab(TAB_ORDER[0]);
+          const initialDrafts = {};
+          propTypes.forEach(tipo => { initialDrafts[tipo] = { data: "", valor: "" }; });
+          setPropDrafts(initialDrafts);
+          setActivePropKeys({});
         }
 
         const informacoes = visao?.conteudo?.informacoesPessoais;
@@ -618,7 +650,11 @@ function App() {
           valor: r.valor
         }));
       }
-      return [];
+      const entries = propHistoricaEntries[propertyKey] || [];
+      return entries.map(r => ({
+        data: toDisplayDate(r.data),
+        valor: r.valor
+      }));
     };
     return Object.fromEntries(
       Object.keys(PROPERTY_SECTION_CONFIG).map((sectionName) => [
@@ -629,7 +665,7 @@ function App() {
         }))
       ])
     );
-  }, [discHistorico]);
+  }, [discHistorico, propHistoricaEntries]);
 
   const dashboardCardsWithFallbackRadar = useMemo(() => {
     return dashboardCards.map((card) => {
@@ -945,11 +981,34 @@ function App() {
     }
   }
 
-  function handleSaveSectionWithoutEndpoint(sectionName) {
-    setError(
-      `A secao ${sectionName} ainda nao possui endpoint de gravacao no backend. ` +
-        "O botao foi habilitado para manter o comportamento do prototipo."
-    );
+  async function handleSavePropHistorica(sectionName) {
+    const config = PROPERTY_SECTION_CONFIG[sectionName];
+    const tipo = activePropKeys[sectionName] || config?.properties[0]?.tooltipKey;
+    if (!tipo || !selectedLideradoId) return;
+
+    const draft = propDrafts[tipo] || { data: "", valor: "" };
+    const isoDate = toIsoDate(draft.data);
+    if (!isoDate) {
+      setError(buildDiscDateErrorMessage(draft.data));
+      return;
+    }
+    if (!draft.valor?.trim()) {
+      setError("O valor e obrigatorio.");
+      return;
+    }
+
+    try {
+      await requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`, {
+        method: "POST",
+        body: JSON.stringify({ valor: draft.valor.trim(), data: isoDate })
+      });
+      const response = await requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`);
+      setPropHistoricaEntries(prev => ({ ...prev, [tipo]: response?.registros || [] }));
+      setPropDrafts(prev => ({ ...prev, [tipo]: { data: "", valor: "" } }));
+      setError("");
+    } catch (e) {
+      setError(e.message);
+    }
   }
 
   function renderInfoIcon(label, key) {
@@ -1478,7 +1537,7 @@ function App() {
                       <button
                         type="button"
                         className="btn ghost small"
-                        onClick={() => handleSaveSectionWithoutEndpoint(activeTab)}
+                        onClick={() => handleSavePropHistorica(activeTab)}
                       >
                         Salvar
                       </button>
@@ -1488,7 +1547,19 @@ function App() {
                     <PropertyTabsSection
                       groups={propertySectionData[activeTab] || []}
                       renderInfoIcon={renderInfoIcon}
-                      {...(activeTab === "Classificacao de Perfil" ? { classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil: true } : {})}
+                      {...(activeTab === "Classificacao de Perfil"
+                        ? { classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil: true }
+                        : {
+                            propDrafts,
+                            onPropDraftChange: (tipo, field, value) =>
+                              setPropDrafts(prev => ({
+                                ...prev,
+                                [tipo]: { ...(prev[tipo] || { data: "", valor: "" }), [field]: value }
+                              })),
+                            onActiveKeyChange: (key) =>
+                              setActivePropKeys(prev => ({ ...prev, [activeTab]: key }))
+                          }
+                      )}
                     />
                   </div>
                 </section>

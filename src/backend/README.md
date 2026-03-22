@@ -1,22 +1,21 @@
 # PeopleManagement Backend
 
-Backend em .NET 8 com organizacao inicial em Vertical Slice, DDD tatico e principios de arquitetura hexagonal.
+Backend em .NET 8 organizado em camadas com slices por feature na aplicacao.
 
 ## Estrutura atual
 
-- `PeopleManagement.Domain`: entidades e regras de dominio.
-- `PeopleManagement.Application`: casos de uso por feature (`Features/...`).
-- `PeopleManagement.Infrastructure`: adapters de infraestrutura (repositorio em memoria no MVP).
-- `PeopleManagement.Api`: Minimal API com endpoints e Swagger.
-- `PeopleManagement.Tests`: testes unitarios com xUnit, Moq e FluentAssertions.
+- `PeopleManagement.Api`: controllers por feature, `Program.cs`, DI, Swagger e bootstrap do banco.
+- `PeopleManagement.Application`: slices por feature com servicos, objetos de dominio da feature, repositorios e persistencia EF.
+- `PeopleManagement.Infrastructure`: projeto de migrations do EF Core.
+- `PeopleManagement.Tests`: testes automatizados por feature.
 
-## Primeira vertical slice implementada
+## Features ativas
 
-Feature: `Liderados`
-
-- `CriarLiderado` (POST `/api/liderados`)
-- `ListarLiderados` (GET `/api/liderados`)
-- `ObterLideradoPorId` (GET `/api/liderados/{id}`)
+- `Dashboard`
+- `Liderados`
+- `DISC`
+- `Cultura`
+- `Tooltips`
 
 ## Como executar
 

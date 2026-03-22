@@ -1,38 +1,30 @@
 using Microsoft.AspNetCore.Mvc;
-using PeopleManagement.Application.Abstractions.Models;
-using PeopleManagement.Application.Abstractions.Persistence;
-using PeopleManagement.Application.Features.Liderados.CriarLiderado;
-using PeopleManagement.Application.Features.Liderados.ListarLiderados;
-using PeopleManagement.Application.Features.Liderados.ObterLideradoPorId;
-using PeopleManagement.Application.Features.Liderados.ObterVisaoIndividual;
-using PeopleManagement.Domain;
+using PeopleManagement.Application.Common;
+using PeopleManagement.Application.Features.Liderados;
 
 namespace PeopleManagement.Api.Controllers;
 
 [ApiController]
-
 [Route("api/liderados")]
-public class LideradosController : ControllerBase
+public sealed class LideradosController : ControllerBase
 {
-
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> AtualizarLiderado(
         Guid id,
-        [FromBody] CriarLideradoRequest request, // Reuse for simplicity; ideally, create a dedicated Update DTO
-        [FromServices] PeopleManagement.Application.Features.Liderados.AtualizarLiderado.IAtualizarLideradoHandler handler,
+        [FromBody] CriarLideradoRequest request,
+        [FromServices] LideradosService lideradosService,
         [FromServices] ILogger<LideradosController> logger,
         CancellationToken cancellationToken)
     {
         try
         {
-            var command = new PeopleManagement.Application.Features.Liderados.AtualizarLiderado.AtualizarLideradoCommand(id, request.Nome);
-            await handler.HandleAsync(command, cancellationToken);
-            logger.LogInformation("Endpoint de atualização executado. Id={LideradoId}", id);
+            await lideradosService.AtualizarNomeAsync(id, request.Nome, cancellationToken);
+            logger.LogInformation("Endpoint de atualizacao executado. Id={LideradoId}", id);
             return NoContent();
         }
-        catch (DomainException ex)
+        catch (RegraNegocioException ex)
         {
-            logger.LogWarning(ex, "Falha de regra de dominio ao atualizar liderado.");
+            logger.LogWarning(ex, "Falha de regra de negocio ao atualizar liderado.");
             return BadRequest(new { erro = ex.Message });
         }
     }
@@ -40,20 +32,19 @@ public class LideradosController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> RemoverLiderado(
         Guid id,
-        [FromServices] PeopleManagement.Application.Features.Liderados.RemoverLiderado.IRemoverLideradoHandler handler,
+        [FromServices] LideradosService lideradosService,
         [FromServices] ILogger<LideradosController> logger,
         CancellationToken cancellationToken)
     {
         try
         {
-            var command = new PeopleManagement.Application.Features.Liderados.RemoverLiderado.RemoverLideradoCommand(id);
-            await handler.HandleAsync(command, cancellationToken);
-            logger.LogInformation("Endpoint de remoção executado. Id={LideradoId}", id);
+            await lideradosService.RemoverAsync(id, cancellationToken);
+            logger.LogInformation("Endpoint de remocao executado. Id={LideradoId}", id);
             return NoContent();
         }
-        catch (DomainException ex)
+        catch (RegraNegocioException ex)
         {
-            logger.LogWarning(ex, "Falha de regra de dominio ao remover liderado.");
+            logger.LogWarning(ex, "Falha de regra de negocio ao remover liderado.");
             return BadRequest(new { erro = ex.Message });
         }
     }
@@ -61,98 +52,59 @@ public class LideradosController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CriarLiderado(
         [FromBody] CriarLideradoRequest request,
-        [FromServices] ICriarLideradoHandler handler,
+        [FromServices] LideradosService lideradosService,
         [FromServices] ILogger<LideradosController> logger,
         CancellationToken cancellationToken)
     {
         try
         {
-            var command = new CriarLideradoCommand(request.Nome);
-            var created = await handler.HandleAsync(command, cancellationToken);
+            var created = await lideradosService.CriarAsync(request.Nome, cancellationToken);
             logger.LogInformation("Endpoint de criacao executado. Id={LideradoId}", created.Id);
             return Created($"/api/liderados/{created.Id}", created);
         }
-        catch (DomainException ex)
+        catch (RegraNegocioException ex)
         {
-            logger.LogWarning(ex, "Falha de regra de dominio ao criar liderado.");
+            logger.LogWarning(ex, "Falha de regra de negocio ao criar liderado.");
             return BadRequest(new { erro = ex.Message });
         }
     }
 
     [HttpGet]
     public async Task<IActionResult> ListarLiderados(
-        [FromServices] IListarLideradosHandler handler,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        var liderados = await handler.HandleAsync(new ListarLideradosQuery(), cancellationToken);
+        var liderados = await lideradosService.ListarAsync(cancellationToken);
         return Ok(liderados);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> ObterLideradoPorId(
         Guid id,
-        [FromServices] IObterLideradoPorIdHandler handler,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        var liderado = await handler.HandleAsync(new ObterLideradoPorIdQuery(id), cancellationToken);
+        var liderado = await lideradosService.ObterPorIdAsync(id, cancellationToken);
         return liderado is null ? NotFound() : Ok(liderado);
     }
 
     [HttpGet("{id:guid}/visao-individual")]
     public async Task<IActionResult> ObterVisaoIndividual(
         Guid id,
-        [FromServices] ILideradoRepository lideradoRepository,
-        [FromServices] IInformacoesPessoaisRepository informacoesPessoaisRepository,
-        [FromServices] IClassificacaoPerfilRepository classificacaoPerfilRepository,
-        [FromServices] ICulturaRepository culturaRepository,
-        [FromServices] IFeedbackRepository feedbackRepository,
-        [FromServices] IOneOnOneRepository oneOnOneRepository,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        var liderado = await lideradoRepository.ObterPorIdAsync(id, cancellationToken);
-        if (liderado is null)
-        {
-            return NotFound();
-        }
-
-        var informacoes = await informacoesPessoaisRepository.ObterAsync(id, cancellationToken)
-            ?? new InformacoesPessoais(
-                liderado.Nome,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null);
-
-        var feedbacks = await feedbackRepository.ListarPorLideradoAsync(id, cancellationToken);
-        var oneOnOnes = await oneOnOneRepository.ListarPorLideradoAsync(id, cancellationToken);
-        var classificacaoPerfil = await classificacaoPerfilRepository.ObterAsync(id, cancellationToken);
-        var datasAvaliacaoCultura = await culturaRepository.ListarDatasDisponiveisAsync(id, cancellationToken);
-
-        var projection = new VisaoIndividualProjection(
-            id,
-            informacoes,
-            classificacaoPerfil?.Perfil,
-            classificacaoPerfil?.NineBox,
-            feedbacks.Count,
-            oneOnOnes.Count,
-            datasAvaliacaoCultura);
-
-        return Ok(new ObterVisaoIndividualResponse(projection));
+        var response = await lideradosService.ObterVisaoIndividualAsync(id, cancellationToken);
+        return response is null ? NotFound() : Ok(response);
     }
 
     [HttpGet("{id:guid}/feedbacks")]
     public async Task<IActionResult> ListarFeedbacks(
         Guid id,
-        [FromServices] IFeedbackRepository feedbackRepository,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        var registros = await feedbackRepository.ListarPorLideradoAsync(id, cancellationToken);
+        var registros = await lideradosService.ListarFeedbacksAsync(id, cancellationToken);
         return Ok(new { registros });
     }
 
@@ -160,16 +112,12 @@ public class LideradosController : ControllerBase
     public async Task<IActionResult> CriarFeedback(
         Guid id,
         [FromBody] CriarFeedbackRequest request,
-        [FromServices] IFeedbackRepository feedbackRepository,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        await feedbackRepository.AdicionarAsync(
-            new FeedbackRegistro(
-                id,
-                request.Data,
-                request.Conteudo,
-                request.Receptividade,
-                request.Polaridade),
+        await lideradosService.CriarFeedbackAsync(
+            id,
+            new CriarFeedbackInput(request.Data, request.Conteudo, request.Receptividade, request.Polaridade),
             cancellationToken);
 
         return Created($"/api/liderados/{id}/feedbacks", null);
@@ -178,10 +126,10 @@ public class LideradosController : ControllerBase
     [HttpGet("{id:guid}/one-on-ones")]
     public async Task<IActionResult> ListarOneOnOnes(
         Guid id,
-        [FromServices] IOneOnOneRepository oneOnOneRepository,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        var registros = await oneOnOneRepository.ListarPorLideradoAsync(id, cancellationToken);
+        var registros = await lideradosService.ListarOneOnOnesAsync(id, cancellationToken);
         return Ok(new { registros });
     }
 
@@ -189,95 +137,144 @@ public class LideradosController : ControllerBase
     public async Task<IActionResult> CriarOneOnOne(
         Guid id,
         [FromBody] CriarOneOnOneRequest request,
-        [FromServices] IOneOnOneRepository oneOnOneRepository,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        await oneOnOneRepository.AdicionarAsync(
-            new OneOnOneRegistro(
-                id,
-                request.Data,
-                request.Resumo,
-                request.TarefasAcordadas,
-                request.ProximosAssuntos),
+        await lideradosService.CriarOneOnOneAsync(
+            id,
+            new CriarOneOnOneInput(request.Data, request.Resumo, request.TarefasAcordadas, request.ProximosAssuntos),
             cancellationToken);
 
         return Created($"/api/liderados/{id}/one-on-ones", null);
+    }
+
+    [HttpPost("{id:guid}/cultura")]
+    public async Task<IActionResult> SalvarCultura(
+        Guid id,
+        [FromBody] SalvarCulturaRequest request,
+        [FromServices] LideradosService lideradosService,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await lideradosService.SalvarCulturaAsync(
+                id,
+                new RadarCulturalResponse(
+                    request.Data,
+                    request.AprenderEMelhorarSempre,
+                    request.AtitudeDeDono,
+                    request.BuscarMelhoresResultadosParaClientes,
+                    request.EspiritoDeEquipe,
+                    request.Excelencia,
+                    request.FazerAcontecer,
+                    request.InovarParaInspirar),
+                cancellationToken);
+
+            return Created($"/api/liderados/{id}/cultura", null);
+        }
+        catch (RegraNegocioException ex)
+        {
+            return BadRequest(new { erro = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:guid}/cultura/radar")]
+    public async Task<IActionResult> ObterRadarCultural(
+        Guid id,
+        [FromQuery] DateOnly data,
+        [FromServices] LideradosService lideradosService,
+        CancellationToken cancellationToken)
+    {
+        var radar = await lideradosService.ObterRadarCulturalAsync(id, data, cancellationToken);
+        return radar is null ? NotFound() : Ok(new { radar });
     }
 
     [HttpPut("{id:guid}/informacoes-pessoais")]
     public async Task<IActionResult> AtualizarInformacoesPessoais(
         Guid id,
         [FromBody] AtualizarInformacoesPessoaisRequest request,
-        [FromServices] ILideradoRepository lideradoRepository,
-        [FromServices] IInformacoesPessoaisRepository informacoesPessoaisRepository,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        var liderado = await lideradoRepository.ObterPorIdAsync(id, cancellationToken);
-        if (liderado is null)
+        try
         {
-            return NotFound();
-        }
+            await lideradosService.AtualizarInformacoesPessoaisAsync(
+                id,
+                new AtualizarInformacoesPessoaisInput(
+                    request.Nome,
+                    request.DataNascimento,
+                    request.EstadoCivil,
+                    request.QuantidadeFilhos,
+                    request.DataContratacao,
+                    request.Cargo,
+                    request.DataInicioCargo,
+                    request.AspiracaoCarreira,
+                    request.GostosPessoais,
+                    request.RedFlags,
+                    request.Bio),
+                cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(request.Nome))
+            return NoContent();
+        }
+        catch (RegraNegocioException ex)
         {
-            return BadRequest(new { erro = "O nome do liderado e obrigatorio." });
+            return BadRequest(new { erro = ex.Message });
         }
-
-        liderado.AtualizarNome(request.Nome);
-        await lideradoRepository.AtualizarAsync(liderado, cancellationToken);
-
-        var informacoes = new InformacoesPessoais(
-            request.Nome,
-            request.DataNascimento,
-            request.EstadoCivil,
-            request.QuantidadeFilhos,
-            request.DataContratacao,
-            request.Cargo,
-            request.DataInicioCargo,
-            request.AspiracaoCarreira,
-            request.GostosPessoais,
-            request.RedFlags,
-            request.Bio);
-
-        await informacoesPessoaisRepository.SalvarAsync(id, informacoes, cancellationToken);
-        return NoContent();
     }
 
     [HttpPut("{id:guid}/classificacao-perfil")]
     public async Task<IActionResult> AtualizarClassificacaoPerfil(
         Guid id,
         [FromBody] AtualizarClassificacaoPerfilRequest request,
-        [FromServices] ILideradoRepository lideradoRepository,
-        [FromServices] IClassificacaoPerfilRepository classificacaoPerfilRepository,
+        [FromServices] LideradosService lideradosService,
         CancellationToken cancellationToken)
     {
-        var liderado = await lideradoRepository.ObterPorIdAsync(id, cancellationToken);
-        if (liderado is null)
+        try
         {
-            return NotFound();
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Perfil) || string.IsNullOrWhiteSpace(request.NineBox))
-        {
-            return BadRequest(new { erro = "Perfil e Nine Box sao obrigatorios." });
-        }
-
-        var classificacaoAtual = await classificacaoPerfilRepository.ObterAsync(id, cancellationToken);
-
-        await classificacaoPerfilRepository.SalvarAsync(
-            new ClassificacaoPerfilRegistro(
+            await lideradosService.AtualizarClassificacaoPerfilAsync(
                 id,
-                request.Perfil.Trim(),
-                request.NineBox.Trim(),
-                classificacaoAtual?.Disc,
-                request.Data.ToDateTime(TimeOnly.MinValue)),
-            cancellationToken);
+                request.Perfil,
+                request.NineBox,
+                request.Data,
+                cancellationToken);
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (RegraNegocioException ex)
+        {
+            return BadRequest(new { erro = ex.Message });
+        }
     }
 }
+
+public sealed record CriarLideradoRequest(string Nome);
+
+public sealed record AtualizarInformacoesPessoaisRequest(
+    string Nome,
+    DateOnly? DataNascimento,
+    string? EstadoCivil,
+    int? QuantidadeFilhos,
+    DateOnly? DataContratacao,
+    string? Cargo,
+    DateOnly? DataInicioCargo,
+    string? AspiracaoCarreira,
+    string? GostosPessoais,
+    string? RedFlags,
+    string? Bio);
+
+public sealed record AtualizarClassificacaoPerfilRequest(string Perfil, string NineBox, DateOnly Data);
 
 public sealed record CriarFeedbackRequest(DateOnly Data, string Conteudo, string Receptividade, string Polaridade);
 
 public sealed record CriarOneOnOneRequest(DateOnly Data, string Resumo, string TarefasAcordadas, string ProximosAssuntos);
+
+public sealed record SalvarCulturaRequest(
+    DateOnly Data,
+    int AprenderEMelhorarSempre,
+    int AtitudeDeDono,
+    int BuscarMelhoresResultadosParaClientes,
+    int EspiritoDeEquipe,
+    int Excelencia,
+    int FazerAcontecer,
+    int InovarParaInspirar);
 

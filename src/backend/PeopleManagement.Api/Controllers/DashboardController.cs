@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PeopleManagement.Application.Features.Dashboard.ObterDashboard;
+using PeopleManagement.Application.Features.Dashboard;
 
 namespace PeopleManagement.Api.Controllers;
 
@@ -9,10 +9,10 @@ public sealed class DashboardController : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> ObterDashboard(
-        [FromServices] IObterDashboardHandler handler,
+        [FromServices] DashboardService dashboardService,
         CancellationToken cancellationToken)
     {
-        var response = await handler.HandleAsync(new ObterDashboardQuery(), cancellationToken);
+        var response = await dashboardService.ObterAsync(cancellationToken);
         return Ok(response);
     }
 }

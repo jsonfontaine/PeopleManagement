@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using PeopleManagement.Application.Features.Liderados;
 using PeopleManagement.Infrastructure.Persistence.Entities;
 
 namespace PeopleManagement.Infrastructure.Persistence;
 
-/// <summary>
-/// Contexto de dados principal da aplicacao.
-/// </summary>
 public sealed class PeopleManagementDbContext : DbContext
 {
     public PeopleManagementDbContext(DbContextOptions<PeopleManagementDbContext> options) : base(options)
@@ -13,21 +11,14 @@ public sealed class PeopleManagementDbContext : DbContext
     }
 
     public DbSet<LideradoEntity> Liderados => Set<LideradoEntity>();
-
     public DbSet<InformacoesPessoaisEntity> InformacoesPessoais => Set<InformacoesPessoaisEntity>();
-
     public DbSet<FeedbackEntity> Feedbacks => Set<FeedbackEntity>();
-
     public DbSet<OneOnOneEntity> OneOnOnes => Set<OneOnOneEntity>();
-
     public DbSet<ClassificacaoPerfilEntity> ClassificacoesPerfil => Set<ClassificacaoPerfilEntity>();
-
     public DbSet<CulturaAvaliacaoEntity> CulturaAvaliacoes => Set<CulturaAvaliacaoEntity>();
-
-
+    public DbSet<TooltipEntity> Tooltips => Set<TooltipEntity>();
     public DbSet<DiscEntity> Discs => Set<DiscEntity>();
-
-
+    public DbSet<PropriedadeHistoricaEntity> PropriedadesHistoricas => Set<PropriedadeHistoricaEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,12 +26,7 @@ public sealed class PeopleManagementDbContext : DbContext
         {
             builder.ToTable("Liderados");
             builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id)
-                .IsRequired()
-                .HasConversion(
-                    v => v, // string to string for EF
-                    v => v // string to string for EF
-                );
+            builder.Property(x => x.Id).IsRequired().HasConversion(v => v, v => v);
             builder.Property(x => x.Nome).IsRequired().HasMaxLength(200);
             builder.Property(x => x.DataCriacaoUtc).IsRequired();
             builder.HasIndex(x => x.Nome);
@@ -92,6 +78,12 @@ public sealed class PeopleManagementDbContext : DbContext
             builder.HasIndex(x => new { x.LideradoId, x.Data }).IsUnique();
         });
 
+        modelBuilder.Entity<TooltipEntity>(builder =>
+        {
+            builder.ToTable("Tooltips");
+            builder.HasKey(x => x.ChaveCampo);
+            builder.Property(x => x.Texto).IsRequired();
+        });
 
         modelBuilder.Entity<DiscEntity>(builder =>
         {
@@ -101,5 +93,17 @@ public sealed class PeopleManagementDbContext : DbContext
             builder.Property(x => x.Valor).IsRequired();
             builder.Property(x => x.Data).IsRequired();
         });
+
+        modelBuilder.Entity<PropriedadeHistoricaEntity>(builder =>
+        {
+            builder.ToTable("PropriedadesHistoricas");
+            builder.HasKey(x => new { x.IdLiderado, x.Tipo, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Tipo).IsRequired().HasMaxLength(100);
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+            builder.HasIndex(x => new { x.IdLiderado, x.Tipo });
+        });
     }
 }
+
