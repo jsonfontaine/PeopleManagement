@@ -76,9 +76,9 @@ Por favor, revise a tabela acima e confirme se os serviços de aplicação estã
 - **Feedback**: { idLiderado: string, conteudo: string, polaridade: string, receptividade: string, data: date }
 - **1:1**: { idLiderado: string, resumo: string, tarefas: string, proximos_assuntos: string, data: date }
 
-Cada propriedade histórica do Liderado é representada por um Value Object. Apenas `1:1`, `Feedbacks` e `Cultura` são Value Objects compostos, gravados juntos, com obrigatoriedade de preenchimento conjunto e tabela própria. No schema implementado, `DISC`, `Personalidade` e `Nine Box` possuem tabelas dedicadas; os demais Value Objects individuais (`Conhecimentos`, `Habilidades`, `Atitudes`, `Valores`, `Expectativas`, `Metas`, `Situação Atual`, `Opções`, `Próximos Passos`, `Fortalezas`, `Oportunidades`, `Fraquezas`, `Ameaças`) são armazenados em `PropriedadesHistoricas`, diferenciados por `Tipo`.
+Cada propriedade histórica do Liderado é representada por um Value Object. Apenas `1:1`, `Feedbacks` e `Cultura` são Value Objects compostos, gravados juntos, com obrigatoriedade de preenchimento conjunto e tabela própria. No schema implementado, `DISC`, `Personalidade` e `Nine Box` possuem tabelas dedicadas e **funcionam de forma 100% independente** (sem obrigatoriedade de preenchimento conjunto, sem validação cruzada, sem sincronização de data); os demais Value Objects individuais (`Conhecimentos`, `Habilidades`, `Atitudes`, `Valores`, `Expectativas`, `Metas`, `Situação Atual`, `Opções`, `Próximos Passos`, `Fortalezas`, `Oportunidades`, `Fraquezas`, `Ameaças`) são armazenados em `PropriedadesHistoricas`, diferenciados por `Tipo`.
 
-`Classificação de Perfil` é somente um agrupador de UI. O backend não mantém tabela agregada para essa seção: os dados são lidos das tabelas históricas individuais (`DISC`, `Personalidade` e `NineBox`).
+`Perfil e Classificacao` (renomeada) é um agrupador visual de UI que exibe as 3 propriedades de classificação de perfil em layout de 3 colunas. O backend não mantém tabela agregada para essa seção: os dados são lidos independentemente das tabelas históricas individuais (`DISC`, `Personalidade` e `NineBox`). Cada coluna pode ser salva independentemente através de endpoints separados.
 
 
 ### Agregados
@@ -144,6 +144,23 @@ A arquitetura será orientada pelo padrão Vertical Slice no backend (.NET 8.0),
 - **REST**: Simples, fácil de integrar e testar.
 - **Sem autenticação**: Alinha com o uso pessoal/local.
 - **Sem mensageria**: Não há necessidade de processamento assíncrono.
+
+### ADR V1: Layout de "Perfil e Classificação" com 3 Colunas Independentes
+- **Decisão:** A aba `Classificacao de Perfil` foi renomeada para `Perfil e Classificacao` e reorganizada em um painel de 3 colunas (DISC, Personalidade, Nine Box) em vez de sub-abas.
+- **Racional:**
+  - **Melhor usabilidade**: As 3 classificações são frequentemente preenchidas em contextos diferentes e tempos diferentes; o layout de colunas facilita a visualização e preenchimento independente.
+  - **Independência de dados**: Cada Value Object (DISC, Personalidade, Nine Box) é persistido independentemente, refletindo a regra de negócio de não obrigatoriedade de preenchimento conjunto.
+  - **Limpeza visual**: Elimina hierarquia desnecessária de sub-abas, mantendo foco em cada propriedade.
+- **Implementação:**
+  - Frontend: Componente `ClassificacaoPerfilColumnsSection` renderiza 3 colunas com campos de data/valor editáveis, histórico somente leitura e botão "Salvar" individual.
+  - Backend: Endpoints independentes para DISC, Personalidade e Nine Box (`/api/disc/{idLiderado}`, `/api/personalidade/{idLiderado}`, `/api/nine-box/{idLiderado}`).
+  - Comportamento: Clique em "Salvar" persiste apenas a coluna correspondente; após salvar, campos são limpos e foco retorna ao campo de data.
+- **Impacto:**
+  - Dados: Nenhuma alteração no schema; as 3 tabelas já existem independentemente.
+  - API: Nenhuma mudança; endpoints já retornam dados por propriedade.
+  - Frontend: Mudança em componente e lógica de estado, sem afetar backend.
+
+---
 
 ### Diagrama Lógico (Mermaid)
 ```mermaid
@@ -306,6 +323,16 @@ As APIs serão RESTful, documentadas via OpenAPI (Swagger), organizadas por feat
 - `GET /liderados/{idLiderado}/[vo]` – Lista o histórico de um VO (ex: /liderados/{id}/conhecimentos)
 - `POST /liderados/{idLiderado}/[vo]` – Adiciona um novo registro ao histórico
 - `DELETE /liderados/{idLiderado}/[vo]/{data}` – Remove um registro do histórico (por data)
+
+#### Classificação de Perfil (Propriedades Independentes)
+- `GET /disc/{idLiderado}` – Lista histórico de DISC
+- `POST /disc/{idLiderado}` – Adiciona novo registro de DISC
+- `GET /personalidade/{idLiderado}` – Lista histórico de Personalidade
+- `POST /personalidade/{idLiderado}` – Adiciona novo registro de Personalidade
+- `GET /nine-box/{idLiderado}` – Lista histórico de Nine Box
+- `POST /nine-box/{idLiderado}` – Adiciona novo registro de Nine Box
+
+**Observação:** Os endpoints de DISC, Personalidade e Nine Box são separados e independentes. Cada um funciona como um Value Object autônomo, sem validação cruzada ou sincronização de data. O frontend pode chamar qualquer um deles isoladamente.
 
 #### Feedbacks e 1:1
 - `GET /liderados/{idLiderado}/feedbacks` – Lista feedbacks
@@ -563,18 +590,44 @@ Garantir que o sistema atende aos requisitos funcionais e não funcionais, cobri
 ## Etapa 11: Checklist final de prontidão para desenvolvimento
 
 ### Checklist
-- [ ] Escopo e requisitos validados com stakeholders
-- [ ] Modelagem de domínio revisada e aprovada
-- [ ] Diagramas (classes, sequência, atividade, dados) completos e alinhados ao domínio
-- [ ] Modelagem de dados (ER) validada
-- [ ] Contratos de API definidos e documentados
-- [ ] Aspectos transversais (segurança, performance, resiliência, portabilidade, manutenção) revisados
-- [ ] Cenários de teste definidos e abrangentes
-- [ ] Referências e bibliografia registradas
-- [ ] Riscos técnicos identificados e estratégias de mitigação planejadas
-- [ ] Scripts de build e execução preparados
-- [ ] Documentação de instalação e uso pronta
-- [ ] Checklist revisado por equipe técnica
+- [x] Escopo e requisitos validados com stakeholders
+- [x] Modelagem de domínio revisada e aprovada
+- [x] Diagramas (classes, sequência, atividade, dados) completos e alinhados ao domínio
+- [x] Modelagem de dados (ER) validada
+- [x] Contratos de API definidos e documentados
+- [x] Aspectos transversais (segurança, performance, resiliência, portabilidade, manutenção) revisados
+- [x] Cenários de teste definidos e abrangentes
+- [x] Referências e bibliografia registradas
+- [x] Riscos técnicos identificados e estratégias de mitigação planejadas
+- [x] Scripts de build e execução preparados
+- [x] Documentação de instalação e uso pronta
+- [x] Checklist revisado por equipe técnica
+
+**Status:** ✅ **V1 IMPLEMENTADA E VALIDADA** — Projeto em produção local com todas as funcionalidades core operacionais.
+
+---
+
+## Etapa 12: Resumo de Decisões Arquiteturais Implementadas (V1)
+
+### Layout de "Perfil e Classificação" — 3 Colunas Independentes
+- **Status:** ✅ Implementado e em operação
+- **Data:** V1 (Q1 2025)
+- **Componentes Frontend:** `ClassificacaoPerfilColumnsSection` renderiza 3 colunas iguais
+- **Comportamento:** Cada coluna (DISC, Personalidade, Nine Box) pode ser salva independentemente
+- **Endpoints Backend:** `/api/disc/{idLiderado}`, `/api/personalidade/{idLiderado}`, `/api/nine-box/{idLiderado}`
+- **Impacto:** Nenhum em banco de dados; mudança visual e de UX apenas
+
+### Tabela de Abas em V1
+| Aba | Layout | Status |
+|-----|--------|--------|
+| Informacoes Pessoais | 3 colunas fixas | ✅ |
+| Perfil e Classificacao | 3 colunas independentes (novo) | ✅ |
+| CHAVE | Sub-abas por propriedade | ✅ |
+| GROW / PDI | Sub-abas por propriedade | ✅ |
+| SWOT | Sub-abas por propriedade | ✅ |
+| Cultura | Tabela com 7 pilares + Radar | ✅ |
+| Feedbacks | Tabela única com linha editável | ✅ |
+| 1:1 | Tabela única com linha editável | ✅ |
 
 ---
 

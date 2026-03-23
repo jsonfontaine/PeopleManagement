@@ -94,16 +94,22 @@ CREATE TABLE NineBox (
     FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Classificacao de Perfil e apenas agrupador de UI (nao existe tabela dedicada).
-
-CREATE TABLE PropriedadesHistoricas (
+-- Historico individual de Conhecimentos
+CREATE TABLE Conhecimento (
     IdLiderado TEXT NOT NULL,
-    Tipo TEXT NOT NULL,
     Data TEXT NOT NULL,
     Valor TEXT NOT NULL,
-    PRIMARY KEY (IdLiderado, Tipo, Data),
+    PRIMARY KEY (IdLiderado, Data),
     FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
-CREATE INDEX IX_PropriedadesHistoricas_IdLiderado_Tipo ON PropriedadesHistoricas (IdLiderado, Tipo);
+-- Historico individual de Habilidades
+CREATE TABLE Habilidade (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
 

@@ -423,6 +423,110 @@ function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificac
   );
 }
 
+function ChaveSection({
+  conhecimentosHistorico,
+  conhecimentosDraft,
+  onConhecimentosDraftChange,
+  onSaveConhecimentos,
+  conhecimentosDateInputRef,
+  habilidadesHistorico,
+  habilidadesDraft,
+  onHabilidadesDraftChange,
+  onSaveHabilidades,
+  habilidadesDateInputRef,
+  renderInfoIcon
+}) {
+  const [activeProperty, setActiveProperty] = useState("conhecimentos");
+
+  const sections = [
+    {
+      key: "conhecimentos",
+      label: "Conhecimentos",
+      tooltipKey: "conhecimentos",
+      historico: conhecimentosHistorico,
+      draft: conhecimentosDraft,
+      onDraftChange: onConhecimentosDraftChange,
+      onSave: onSaveConhecimentos,
+      dateInputRef: conhecimentosDateInputRef
+    },
+    {
+      key: "habilidades",
+      label: "Habilidades",
+      tooltipKey: "habilidades",
+      historico: habilidadesHistorico,
+      draft: habilidadesDraft,
+      onDraftChange: onHabilidadesDraftChange,
+      onSave: onSaveHabilidades,
+      dateInputRef: habilidadesDateInputRef
+    }
+  ];
+
+  return (
+    <div className="prop-tabs">
+      <div className="prop-tabs-bar">
+        {sections.map((section) => (
+          <button
+            key={section.key}
+            type="button"
+            className={`prop-tab-btn ${activeProperty === section.key ? "active" : ""}`}
+            onClick={() => setActiveProperty(section.key)}
+          >
+            {section.label}
+          </button>
+        ))}
+      </div>
+
+      {sections.map((section) => (
+        <div key={section.key} className={`prop-tab-panel ${activeProperty === section.key ? "active" : ""}`}>
+          <table className="history-table classification-table" style={{ tableLayout: "fixed", width: "100%" }}>
+            <thead>
+              <tr>
+                <th className="col-date" style={{ width: "150px", minWidth: "150px", maxWidth: "150px" }}>Data</th>
+                <th className="col-value">
+                  {section.label} {renderInfoIcon(section.label, section.tooltipKey)}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="history-edit">
+                <td className="date-cell">
+                  <MaskedDateInput
+                    className="date-input"
+                    ariaLabel={`Data do registro de ${section.label}`}
+                    value={section.draft?.data || ""}
+                    inputRef={activeProperty === section.key ? section.dateInputRef : undefined}
+                    onChange={(nextValue) => section.onDraftChange("data", nextValue)}
+                  />
+                </td>
+                <td>
+                  <textarea
+                    rows="2"
+                    placeholder={`Registrar ${section.label}`}
+                    value={section.draft?.valor || ""}
+                    onChange={(event) => section.onDraftChange("valor", event.target.value)}
+                  />
+                </td>
+              </tr>
+              {(section.historico || []).map((row) => (
+                <tr key={`${row.data}-${row.valor}`}>
+                  <td>{row.data}</td>
+                  <td>{row.valor}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="classification-column-actions">
+            <button type="button" className="btn ghost small" onClick={section.onSave}>
+              Salvar
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function App() {
   const [view, setView] = useState("dashboard");
   const [loading, setLoading] = useState(true);
@@ -484,11 +588,18 @@ function App() {
   const [discHistorico, setDiscHistorico] = useState([]);
   const [personalidadeHistorico, setPersonalidadeHistorico] = useState([]);
   const [nineBoxHistorico, setNineBoxHistorico] = useState([]);
+  const [conhecimentosHistorico, setConhecimentosHistorico] = useState([]);
+  const [conhecimentosDraft, setConhecimentosDraft] = useState({ data: "", valor: "" });
+  const [habilidadesHistorico, setHabilidadesHistorico] = useState([]);
+  const [habilidadesDraft, setHabilidadesDraft] = useState({ data: "", valor: "" });
+  
   const [propHistoricaEntries, setPropHistoricaEntries] = useState({});
   const [propDrafts, setPropDrafts] = useState({});
   const [activePropKeys, setActivePropKeys] = useState({});
   const prevLideradoIdRef = useRef(null);
   const classificacaoDataInputRefs = useRef({});
+  const conhecimentosDateInputRef = useRef(null);
+  const habilidadesDateInputRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -586,21 +697,16 @@ function App() {
       setError("");
 
       try {
-        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse] = await Promise.all([
+        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse, conhecimentosResponse, habilidadesResponse] = await Promise.all([
           requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`),
           requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`),
           requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`),
           requestJson(`/api/disc/${selectedLideradoId}`),
           requestJson(`/api/personalidade/${selectedLideradoId}`),
-          requestJson(`/api/nine-box/${selectedLideradoId}`)
+          requestJson(`/api/nine-box/${selectedLideradoId}`),
+          requestJson(`/api/conhecimentos/${selectedLideradoId}`),
+          requestJson(`/api/habilidades/${selectedLideradoId}`)
         ]);
-
-        const propTypes = ["conhecimentos", "habilidades", "atitudes", "valores", "expectativas",
-          "metas", "situacaoAtual", "opcoes", "proximosPassos",
-          "fortalezas", "oportunidades", "fraquezas", "ameacas"];
-        const propResponses = await Promise.all(
-          propTypes.map(tipo => requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`))
-        );
 
         const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
         const radarResponses = await Promise.all(
@@ -613,11 +719,6 @@ function App() {
 
         const nextCultureEntries = radarResponses.map((item) => item.radar).filter(Boolean);
 
-        const nextPropEntries = {};
-        propTypes.forEach((tipo, i) => {
-          nextPropEntries[tipo] = propResponses[i]?.registros || [];
-        });
-
         setLeaderView(visao?.conteudo || null);
         setFeedbacks(feedbackResponse?.registros || []);
         setOneOnOnes(oneOnOneResponse?.registros || []);
@@ -625,14 +726,15 @@ function App() {
         setDiscHistorico(discResponse?.registros || []);
         setPersonalidadeHistorico(personalidadeResponse?.registros || []);
         setNineBoxHistorico(nineBoxResponse?.registros || []);
-        setPropHistoricaEntries(nextPropEntries);
+        setConhecimentosHistorico(conhecimentosResponse?.registros || []);
+        setHabilidadesHistorico(habilidadesResponse?.registros || []);
 
         if (isNewLiderado) {
           setCultureIndex(0);
           setActiveTab(TAB_ORDER[0]);
-          const initialDrafts = {};
-          propTypes.forEach(tipo => { initialDrafts[tipo] = { data: "", valor: "" }; });
-          setPropDrafts(initialDrafts);
+          setPropDrafts({});
+          setConhecimentosDraft({ data: "", valor: "" });
+          setHabilidadesDraft({ data: "", valor: "" });
           setActivePropKeys({});
         }
 
@@ -721,6 +823,18 @@ function App() {
           return;
         }
 
+        if (activeTab === "CHAVE") {
+          const [conhecimentosResponse, habilidadesResponse] = await Promise.all([
+            requestJson(`/api/conhecimentos/${selectedLideradoId}`),
+            requestJson(`/api/habilidades/${selectedLideradoId}`)
+          ]);
+          if (!active) return;
+
+          setConhecimentosHistorico(conhecimentosResponse?.registros || []);
+          setHabilidadesHistorico(habilidadesResponse?.registros || []);
+          return;
+        }
+
         if (activeTab === "Feedbacks") {
           const feedbackResponse = await requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`);
           if (!active) return;
@@ -749,7 +863,6 @@ function App() {
         }
 
         const tabToTypes = {
-          CHAVE: ["conhecimentos", "habilidades", "atitudes", "valores", "expectativas"],
           "GROW / PDI": ["metas", "situacaoAtual", "opcoes", "proximosPassos"],
           SWOT: ["fortalezas", "oportunidades", "fraquezas", "ameacas"]
         };
@@ -1150,6 +1263,96 @@ function App() {
       await refreshCurrentLeader();
 
       setError("");
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleSaveConhecimentos() {
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const draft = conhecimentosDraft || { data: "", valor: "" };
+    const isoDate = toIsoDate(draft.data);
+    if (!isoDate) {
+      setError(buildDiscDateErrorMessage(draft.data));
+      return;
+    }
+
+    if (!draft.valor?.trim()) {
+      setError("O valor é obrigatório.");
+      return;
+    }
+
+    try {
+      await requestJson(`/api/conhecimentos`, {
+        method: "POST",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          valor: draft.valor.trim(),
+          data: isoDate
+        })
+      });
+
+      // Reload Conhecimentos histórico
+      const response = await requestJson(`/api/conhecimentos/${selectedLideradoId}`);
+      setConhecimentosHistorico(response?.registros || []);
+
+      // Clear draft
+      setConhecimentosDraft({ data: "", valor: "" });
+
+      // Return focus to date input
+      requestAnimationFrame(() => {
+        conhecimentosDateInputRef.current?.focus();
+      });
+
+      setError("");
+      await refreshCurrentLeader();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleSaveHabilidades() {
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const draft = habilidadesDraft || { data: "", valor: "" };
+    const isoDate = toIsoDate(draft.data);
+    if (!isoDate) {
+      setError("Informe a data de Habilidades no formato dd/MM/aaaa (ex.: 27/11/2025).");
+      return;
+    }
+
+    if (!draft.valor?.trim()) {
+      setError("O valor e obrigatorio.");
+      return;
+    }
+
+    try {
+      await requestJson(`/api/habilidades`, {
+        method: "POST",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          valor: draft.valor.trim(),
+          data: isoDate
+        })
+      });
+
+      const response = await requestJson(`/api/habilidades/${selectedLideradoId}`);
+      setHabilidadesHistorico(response?.registros || []);
+      setHabilidadesDraft({ data: "", valor: "" });
+
+      requestAnimationFrame(() => {
+        habilidadesDateInputRef.current?.focus();
+      });
+
+      setError("");
+      await refreshCurrentLeader();
     } catch (e) {
       setError(e.message);
     }
@@ -1766,7 +1969,46 @@ function App() {
                 </section>
               ) : null}
 
-              {["CHAVE", "GROW / PDI", "SWOT"].includes(activeTab) ? (
+              {activeTab === "CHAVE" ? (
+                <section className="panel section single-column">
+                  <div className="panel-header">
+                    <h3 className="section-title">CHAVE</h3>
+                  </div>
+                  <div className="fields fields--prop-tabs">
+                    <ChaveSection
+                      conhecimentosHistorico={(conhecimentosHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      conhecimentosDraft={conhecimentosDraft}
+                      onConhecimentosDraftChange={(field, value) =>
+                        setConhecimentosDraft(prev => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveConhecimentos={handleSaveConhecimentos}
+                      conhecimentosDateInputRef={conhecimentosDateInputRef}
+                      habilidadesHistorico={(habilidadesHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      habilidadesDraft={habilidadesDraft}
+                      onHabilidadesDraftChange={(field, value) =>
+                        setHabilidadesDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveHabilidades={handleSaveHabilidades}
+                      habilidadesDateInputRef={habilidadesDateInputRef}
+                      renderInfoIcon={renderInfoIcon}
+                    />
+                  </div>
+                </section>
+              ) : null}
+
+              {["GROW / PDI", "SWOT"].includes(activeTab) ? (
                 <section className="panel section single-column">
                   <div className="panel-header">
                     <h3 className="section-title">{activeTab}</h3>

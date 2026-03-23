@@ -46,8 +46,33 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 
 ## 4. Problemas & Oportunidades
 
-- Problema: Atualização manual e trabalhosa de múltiplas planilhas individuais para cada liderado, dificultando a padronização e aumentando o risco de inconsistências e perda de informações.
-- Oportunidade: Centralizar todo o histórico e dados estruturados em uma ferramenta web, facilitando o acompanhamento, a evolução dos liderados e a tomada de decisão baseada em dados consolidados.
+- **Problema:** Atualização manual e trabalhosa de múltiplas planilhas individuais para cada liderado, dificultando a padronização e aumentando o risco de inconsistências e perda de informações.
+- **Oportunidade:** Centralizar todo o histórico e dados estruturados em uma ferramenta web, facilitando o acompanhamento, a evolução dos liderados e a tomada de decisão baseada em dados consolidados.
+
+## 4.1 Revisão de Decisões Arquiteturais Implementadas (V1)
+
+Durante a prototipagem e implementação da V1, foram tomadas as seguintes decisões arquiteturais, refletindo as necessidades de usabilidade e independência de dados:
+
+### Seção "Perfil e Classificação"
+- **Renomeação de aba:** A aba anterior "Classificacao de Perfil" foi renomeada para **"Perfil e Classificacao"**, alinhada ao contexto de classificações de perfil comportamentais.
+- **Layout de 3 colunas:** Em vez de sub-abas, a seção agora exibe um painel com 3 colunas iguais, cada coluna representando um Value Object individual:
+  - Coluna 1: **DISC**
+  - Coluna 2: **Personalidade**
+  - Coluna 3: **Nine Box**
+- **Estrutura de cada coluna:**
+  - Campo de data (editável) + campo de valor (editável)
+  - Tabela de histórico da propriedade, mostrando registros anteriores (somente leitura)
+  - Botão "Salvar" individual para a coluna
+- **Comportamento de salvamento:** Cada coluna opera de forma **100% independente**:
+  - O clique em "Salvar" persiste apenas os dados da coluna correspondente
+  - A data é individual por coluna (não compartilhada)
+  - Após salvar, os campos de edição são limpos e foco retorna ao campo de data
+  - Nenhuma dependência ou validação cruzada entre colunas
+
+### Independência de Value Objects
+- **Regra de negócio reforçada:** Cada Value Object (DISC, Personalidade, Nine Box) é persistido independentemente no banco de dados, sem obrigatoriedade de preenchimento conjunto.
+- **Sem agregação em UI:** O frontend não força preencher todas as 3 colunas simultaneamente; cada uma pode ser registrada em tempo e contexto diferente.
+- **Histórico isolado:** O histórico de cada coluna é carregado e exibido isoladamente, facilitando rastreamento evolutivo por classificação.
 
 ## 5. Requisitos Funcionais
 - RF-01: O usuário pode cadastrar um novo liderado informando somente o nome.
@@ -58,7 +83,7 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - RF-06: O usuário pode registrar e consultar avaliações no modelo C.H.A.V.E (conhecimentos, habilidades, atitudes, valores e expectativas).
 - RF-07: O usuário pode registrar e acompanhar informações de desenvolvimento no formato GROW/PDI (metas, situação atual, opções e próximos passos).
 - RF-08: O usuário pode registrar análises SWOT do liderado.
-- RF-09: O usuário pode registrar e consultar avaliações de perfil (DISC, personalidade e posicionamento em nine box).
+- RF-09: O usuário pode registrar e consultar avaliações de perfil (DISC, personalidade e posicionamento em nine box), cada uma de forma independente.
 - RF-10: O usuário pode registrar fatos e observações relevantes com data.
 - RF-11: A seção `Cultura` deve substituir `Avaliações Gerais` e registrar avaliações 360 com os pilares: Aprender e Melhorar Sempre; Atitude de Dono; Buscar os melhores resultados para os clientes; Espírito de Equipe; Excelência; Fazer Acontecer; Inovar para Inspirar.
 - RF-12: Na seção `Cultura`, os pilares devem ser registrados como valores numéricos por data de avaliação.
@@ -75,12 +100,14 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - RF-23: O sistema deve manter um histórico completo de todas as alterações realizadas em qualquer informação do liderado, incluindo data/hora da alteração, valor anterior, novo valor e usuário responsável. O histórico deve ser consultável pelo usuário em cada seção, permitindo acompanhar a evolução das informações ao longo do tempo.
 - RF-24: A visão individual do liderado deve exibir, no topo da área de conteúdo, uma barra de navegação estilo breadcrumb com: um link acionável "Dashboard" (retorna ao dashboard) e um combobox com todos os liderados cadastrados (permite alternar de liderado sem sair da visão individual).
 - RF-25: O painel lateral de resumo da visão individual deve exibir o nome do liderado como título do painel.
-- RF-26: As seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` devem exibir as propriedades em abas internas, cada aba contendo uma tabela de histórico no formato `Data | <Propriedade>`.
-- RF-27: Nas tabelas de histórico por propriedade (`Classificação de Perfil`, `CHAVE`, `GROW / PDI`, `SWOT`), a primeira linha deve ser editável para novo registro e as linhas subsequentes devem ser somente leitura.
-- RF-28: A seção `Informacoes Pessoais` deve ser exibida em três colunas com a seguinte distribuição: coluna 1 (`Nome`, `Data de nascimento`, `Estado civil`, `Quantidade de filhos`, `Data de contratacao`, `Cargo`, `Data de inicio do cargo`, `Aspiracao (Carreira Y)`), coluna 2 (`Gostos pessoais`, `Red Flags`) e coluna 3 (`BIO`).
-- RF-29: Ao passar o mouse sobre o ícone de informação, o tooltip deve exibir apenas o texto configurado para o tipo de informação, sem título fixo e sem formatação em bullets.
-- RF-30: Ao dar duplo clique no ícone de informação, o sistema deve abrir um modal para incluir/editar o texto do tooltip daquele campo.
-- RF-31: O modal de edição de tooltip deve carregar previamente o mesmo conteúdo textual atualmente exibido no tooltip do campo selecionado.
+- RF-26: A aba `Perfil e Classificacao` deve exibir um painel com 3 colunas iguais (DISC, Personalidade, Nine Box), cada coluna contendo campos editáveis para data e valor, tabela de histórico da propriedade (somente leitura) e botão "Salvar" individual.
+- RF-27: Cada coluna na aba `Perfil e Classificacao` funciona de forma independente: o clique em "Salvar" persiste apenas os dados da coluna correspondente, sem validação cruzada entre colunas.
+- RF-28: As seções `CHAVE`, `GROW / PDI` e `SWOT` devem exibir as propriedades em abas internas, cada aba contendo uma tabela de histórico no formato `Data | <Propriedade>`.
+- RF-29: Nas tabelas de histórico por propriedade (`CHAVE`, `GROW / PDI`, `SWOT`), a primeira linha deve ser editável para novo registro e as linhas subsequentes devem ser somente leitura.
+- RF-30: A seção `Informacoes Pessoais` deve ser exibida em três colunas com a seguinte distribuição: coluna 1 (`Nome`, `Data de nascimento`, `Estado civil`, `Quantidade de filhos`, `Data de contratacao`, `Cargo`, `Data de inicio do cargo`, `Aspiracao (Carreira Y)`), coluna 2 (`Gostos pessoais`, `Red Flags`) e coluna 3 (`BIO`).
+- RF-31: Ao passar o mouse sobre o ícone de informação, o tooltip deve exibir apenas o texto configurado para o tipo de informação, sem título fixo e sem formatação em bullets.
+- RF-32: Ao dar duplo clique no ícone de informação, o sistema deve abrir um modal para incluir/editar o texto do tooltip daquele campo.
+- RF-33: O modal de edição de tooltip deve carregar previamente o mesmo conteúdo textual atualmente exibido no tooltip do campo selecionado.
 
 ## 6. Requisitos Não Funcionais + Ranking de Qualidades
 **Requisitos Não Funcionais**
@@ -155,7 +182,19 @@ Etapas:
 - O usuário preenche uma nova avaliação por data.
 - O sistema salva a avaliação no histórico da seção.
 
-**Fluxo 7: Analisar Radar Cultural por data**  
+**Fluxo 7: Registrar classificações de perfil de forma independente**  
+Atores: Gerente / Sistema  
+Intenção: Avaliar e registrar diferentes dimensões de perfil (DISC, Personalidade, Nine Box) sem obrigatoriedade de preenchimento conjunto.  
+Etapas:
+- O usuário acessa a aba `Perfil e Classificacao`.
+- O sistema exibe um painel com 3 colunas iguais: DISC, Personalidade e Nine Box.
+- Cada coluna possui campos editáveis para data e valor, histórico somente leitura e botão "Salvar".
+- O usuário preenchelinha editável de qualquer coluna (data + valor).
+- O usuário clica em "Salvar" da coluna desejada.
+- O sistema persiste apenas os dados daquela coluna, independentemente das outras.
+- Os campos são limpos após o salvamento e o foco retorna ao campo de data.
+
+**Fluxo 8: Analisar Radar Cultural por data**  
 Atores: Gerente / Sistema  
 Intenção: Comparar visualmente avaliações culturais ao longo do tempo.  
 Etapas:
@@ -164,7 +203,7 @@ Etapas:
 - O usuário troca a data pelo dropdown ou scroll do mouse.
 - O sistema atualiza o gráfico com animação para refletir a avaliação selecionada.
 
-**Fluxo 8: Conduzir conversa com perguntas exploratórias**  
+**Fluxo 9: Conduzir conversa com perguntas exploratórias**  
 Atores: Gerente / Sistema  
 Intenção: Apoiar 1:1 e coleta de dados com perguntas orientadoras.  
 Etapas:
@@ -172,7 +211,7 @@ Etapas:
 - O sistema exibe ícone de informação ao lado dos labels.
 - Ao passar o mouse, o sistema mostra tooltip textual com o conteúdo configurado para o tipo de informação.
 
-**Fluxo 9: Editar texto do tooltip por campo**  
+**Fluxo 10: Editar texto do tooltip por campo**  
 Atores: Gerente / Sistema  
 Intenção: Ajustar rapidamente orientações exibidas no tooltip durante o uso da ferramenta.  
 Etapas:
@@ -193,7 +232,8 @@ Etapas:
 - A seção `1:1` exibe histórico tabular, mantém uma linha editável para novo registro e não utiliza coluna lateral de histórico.
 - A seção `Feedbacks` segue o mesmo padrão de histórico tabular com linha editável para novo registro, incluindo o campo `Polaridade` como combobox com opções `Positivo` e `Negativo`.
 - A seção `Cultura` substitui `Avaliações Gerais` e exibe os sete pilares culturais como colunas numéricas por data.
-- As seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` exibem abas internas por Value Object individual, cada uma com tabela `Data | Propriedade`, com primeira linha editável e histórico somente leitura. Cada Value Object individual (DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças) possui sua própria tabela no banco de dados.
+- A aba `Perfil e Classificacao` (renomeada) exibe um painel com 3 colunas iguais (DISC, Personalidade, Nine Box), cada coluna contendo: campos editáveis para data e valor, tabela de histórico (somente leitura) e botão "Salvar" individual. Cada coluna opera de forma 100% independente, sem validação cruzada ou obrigatoriedade de preenchimento conjunto.
+- As seções `CHAVE`, `GROW / PDI` e `SWOT` exibem abas internas por Value Object individual, cada uma com tabela `Data | Propriedade`, com primeira linha editável e histórico somente leitura. Cada Value Object individual (Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças) possui sua própria tabela no banco de dados.
 - A seção `Informacoes Pessoais` é exibida em três colunas com distribuição fixa: coluna 1 (dados cadastrais e carreira), coluna 2 (`Gostos pessoais` e `Red Flags`) e coluna 3 (`BIO`).
 - O Radar Cultural da visão individual exibe as sete dimensões culturais, lista todas as datas disponíveis em dropdown e atualiza ao trocar a data via seleção ou scroll do mouse.
 - A atualização do Radar Cultural da visão individual ocorre com animação de transição entre valores.

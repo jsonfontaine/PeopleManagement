@@ -2,13 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PeopleManagement.Application.Common.Storage;
+using PeopleManagement.Application.Features.Conhecimentos;
 using PeopleManagement.Application.Features.Dashboard;
 using PeopleManagement.Application.Features.Disc;
+using PeopleManagement.Application.Features.Habilidades;
 using PeopleManagement.Application.Features.Liderados;
 using PeopleManagement.Application.Features.NineBox;
 using PeopleManagement.Application.Features.Personalidade;
-using PeopleManagement.Application.Features.PropHistorica;
-using PeopleManagement.Application.Features.Tooltips;
 using PeopleManagement.Infrastructure.Persistence;
 using PeopleManagement.Infrastructure.Storage;
 
@@ -59,14 +59,15 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStorageCommandHandler<ObterRadarCulturalQuery, RadarCulturalResponse?>, ObterRadarCulturalHandler>();
         services.AddScoped<IStorageCommandHandler<AtualizarInformacoesPessoaisCommand, StorageUnit>, AtualizarInformacoesPessoaisHandler>();
 
-        services.AddScoped<IStorageCommandHandler<ObterTooltipQuery, TooltipResponse?>, ObterTooltipHandler>();
-        services.AddScoped<IStorageCommandHandler<SalvarTooltipCommand, StorageUnit>, SalvarTooltipHandler>();
+        services.AddScoped<IStorageCommandHandler<ListarConhecimentosQuery, IReadOnlyCollection<ConhecimentosRegistro>>, ListarConhecimentosHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoConhecimentosQuery, bool>, VerificarExistenciaLideradoConhecimentosHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarConhecimentosCommand, StorageUnit>, SalvarConhecimentosHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverConhecimentosCommand, StorageUnit>, RemoverConhecimentosHandler>();
 
-        services.AddScoped<IStorageCommandHandler<ListarPropHistoricaQuery, IReadOnlyCollection<PropHistoricaRegistro>>, ListarPropHistoricaHandler>();
-        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoPropHistoricaQuery, bool>, VerificarExistenciaLideradoPropHistoricaHandler>();
-        services.AddScoped<IStorageCommandHandler<SalvarPropHistoricaCommand, StorageUnit>, SalvarPropHistoricaHandler>();
-        services.AddScoped<IStorageCommandHandler<RemoverPropHistoricaCommand, StorageUnit>, RemoverPropHistoricaHandler>();
-        services.AddScoped<IStorageCommandHandler<RemoverTodasPropHistoricaLideradoCommand, StorageUnit>, RemoverTodasPropHistoricaLideradoHandler>();
+        services.AddScoped<IStorageCommandHandler<ListarHabilidadesQuery, IReadOnlyCollection<HabilidadesRegistro>>, ListarHabilidadesHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoHabilidadesQuery, bool>, VerificarExistenciaLideradoHabilidadesHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarHabilidadesCommand, StorageUnit>, SalvarHabilidadesHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverHabilidadesCommand, StorageUnit>, RemoverHabilidadesHandler>();
 
         return services;
     }

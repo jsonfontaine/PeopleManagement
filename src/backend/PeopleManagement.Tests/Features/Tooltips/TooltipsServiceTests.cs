@@ -1,26 +1,47 @@
-using PeopleManagement.Application.Features.Tooltips;
+using PeopleManagement.Application.Common;
+using PeopleManagement.Application.Features.Conhecimentos;
 
-namespace PeopleManagement.Tests.Features.Tooltips;
+namespace PeopleManagement.Tests.Features.Conhecimentos;
 
-public sealed class TooltipsServiceTests
+public sealed class ConhecimentosServiceTests
 {
     [Fact]
-    public async Task ObterAsync_DeveRetornarTooltipDoRepositorio()
+    public async Task SalvarAsync_DeveLancarExcecao_QuandoValorForInvalido()
     {
-        var service = new TooltipsService(new FakeTooltipsRepository());
+        var service = new ConhecimentosService(new FakeConhecimentosRepository(existeLiderado: true));
 
-        var tooltip = await service.ObterAsync("disc", CancellationToken.None);
-
-        Assert.NotNull(tooltip);
-        Assert.Equal("disc", tooltip.ChaveCampo);
+        await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.SalvarAsync(Guid.NewGuid(), "   ", new DateOnly(2026, 3, 23), CancellationToken.None));
     }
 
-    private sealed class FakeTooltipsRepository : ITooltipsRepository
+    [Fact]
+    public async Task SalvarAsync_DeveLancarExcecao_QuandoLideradoNaoExiste()
     {
-        public Task<TooltipResponse?> ObterAsync(string chaveCampo, CancellationToken cancellationToken)
-            => Task.FromResult<TooltipResponse?>(new TooltipResponse(chaveCampo, "texto"));
+        var service = new ConhecimentosService(new FakeConhecimentosRepository(existeLiderado: false));
 
-        public Task SalvarAsync(string chaveCampo, string texto, CancellationToken cancellationToken)
+        await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.SalvarAsync(Guid.NewGuid(), "C#", new DateOnly(2026, 3, 23), CancellationToken.None));
+    }
+
+    private sealed class FakeConhecimentosRepository : IConhecimentosRepository
+    {
+        private readonly bool _existeLiderado;
+
+        public FakeConhecimentosRepository(bool existeLiderado)
+        {
+            _existeLiderado = existeLiderado;
+        }
+
+        public Task<IReadOnlyCollection<ConhecimentosRegistro>> ListarAsync(Guid lideradoId, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyCollection<ConhecimentosRegistro>>(Array.Empty<ConhecimentosRegistro>());
+
+        public Task<bool> LideradoExisteAsync(Guid lideradoId, CancellationToken cancellationToken)
+            => Task.FromResult(_existeLiderado);
+
+        public Task UpsertAsync(ConhecimentosRegistro registro, CancellationToken cancellationToken)
+            => Task.CompletedTask;
+
+        public Task RemoverAsync(Guid lideradoId, DateOnly data, CancellationToken cancellationToken)
             => Task.CompletedTask;
     }
 }

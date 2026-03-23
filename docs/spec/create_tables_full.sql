@@ -103,21 +103,21 @@ CREATE TABLE NineBox (
     FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Classificação de Perfil é apenas agrupador de UI.
--- Não existe tabela agregada ClassificacoesPerfil no banco.
-
--- Histórico genérico de propriedades para CHAVE, GROW / PDI e SWOT.
--- O campo Tipo armazena a propriedade, por exemplo:
--- conhecimentos, habilidades, atitudes, valores, expectativas,
--- metas, situacaoAtual, opcoes, proximosPassos,
--- fortalezas, oportunidades, fraquezas, ameacas.
-CREATE TABLE PropriedadesHistoricas (
+-- Histórico individual de Conhecimentos
+CREATE TABLE Conhecimento (
     IdLiderado TEXT NOT NULL,
-    Tipo TEXT NOT NULL,
     Data TEXT NOT NULL,
     Valor TEXT NOT NULL,
-    PRIMARY KEY (IdLiderado, Tipo, Data),
+    PRIMARY KEY (IdLiderado, Data),
     FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
-CREATE INDEX IX_PropriedadesHistoricas_IdLiderado_Tipo ON PropriedadesHistoricas (IdLiderado, Tipo);
+-- Histórico individual de Habilidades
+CREATE TABLE Habilidade (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+

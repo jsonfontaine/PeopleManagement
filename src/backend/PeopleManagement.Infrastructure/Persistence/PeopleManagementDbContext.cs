@@ -17,9 +17,10 @@ public sealed class PeopleManagementDbContext : DbContext
     public DbSet<CulturaAvaliacaoEntity> CulturaAvaliacoes => Set<CulturaAvaliacaoEntity>();
     public DbSet<TooltipEntity> Tooltips => Set<TooltipEntity>();
     public DbSet<DiscEntity> Discs => Set<DiscEntity>();
+    public DbSet<ConhecimentoEntity> Conhecimentos => Set<ConhecimentoEntity>();
+    public DbSet<HabilidadeEntity> Habilidades => Set<HabilidadeEntity>();
     public DbSet<PersonalidadeEntity> Personalidades => Set<PersonalidadeEntity>();
     public DbSet<NineBoxEntity> NineBoxes => Set<NineBoxEntity>();
-    public DbSet<PropriedadeHistoricaEntity> PropriedadesHistoricas => Set<PropriedadeHistoricaEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -87,6 +88,24 @@ public sealed class PeopleManagementDbContext : DbContext
             builder.Property(x => x.Data).IsRequired();
         });
 
+        modelBuilder.Entity<ConhecimentoEntity>(builder =>
+        {
+            builder.ToTable("Conhecimento");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<HabilidadeEntity>(builder =>
+        {
+            builder.ToTable("Habilidade");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
         modelBuilder.Entity<PersonalidadeEntity>(builder =>
         {
             builder.ToTable("Personalidade");
@@ -105,16 +124,6 @@ public sealed class PeopleManagementDbContext : DbContext
             builder.Property(x => x.Data).IsRequired();
         });
 
-        modelBuilder.Entity<PropriedadeHistoricaEntity>(builder =>
-        {
-            builder.ToTable("PropriedadesHistoricas");
-            builder.HasKey(x => new { x.IdLiderado, x.Tipo, x.Data });
-            builder.Property(x => x.IdLiderado).IsRequired();
-            builder.Property(x => x.Tipo).IsRequired().HasMaxLength(100);
-            builder.Property(x => x.Valor).IsRequired();
-            builder.Property(x => x.Data).IsRequired();
-            builder.HasIndex(x => new { x.IdLiderado, x.Tipo });
-        });
     }
 }
 
