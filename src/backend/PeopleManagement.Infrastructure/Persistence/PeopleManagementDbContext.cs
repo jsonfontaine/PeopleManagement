@@ -22,6 +22,14 @@ public sealed class PeopleManagementDbContext : DbContext
     public DbSet<AtitudeEntity> Atitudes => Set<AtitudeEntity>();
     public DbSet<ValorEntity> Valores => Set<ValorEntity>();
     public DbSet<ExpectativaEntity> Expectativas => Set<ExpectativaEntity>();
+    public DbSet<MetaEntity> Metas => Set<MetaEntity>();
+    public DbSet<SituacaoAtualEntity> SituacaoAtual => Set<SituacaoAtualEntity>();
+    public DbSet<OpcaoEntity> Opcoes => Set<OpcaoEntity>();
+    public DbSet<ProximoPassoEntity> ProximosPassos => Set<ProximoPassoEntity>();
+    public DbSet<FortalezaEntity> Fortalezas => Set<FortalezaEntity>();
+    public DbSet<OportunidadeEntity> Oportunidades => Set<OportunidadeEntity>();
+    public DbSet<FraquezaEntity> Fraquezas => Set<FraquezaEntity>();
+    public DbSet<AmeacaEntity> Ameacas => Set<AmeacaEntity>();
     public DbSet<PersonalidadeEntity> Personalidades => Set<PersonalidadeEntity>();
     public DbSet<NineBoxEntity> NineBoxes => Set<NineBoxEntity>();
 
@@ -148,6 +156,78 @@ public sealed class PeopleManagementDbContext : DbContext
         modelBuilder.Entity<NineBoxEntity>(builder =>
         {
             builder.ToTable("NineBox");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<MetaEntity>(builder =>
+        {
+            builder.ToTable("Meta");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<SituacaoAtualEntity>(builder =>
+        {
+            builder.ToTable("SituacaoAtual");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<OpcaoEntity>(builder =>
+        {
+            builder.ToTable("Opcao");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<ProximoPassoEntity>(builder =>
+        {
+            builder.ToTable("ProximoPasso");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<FortalezaEntity>(builder =>
+        {
+            builder.ToTable("Fortaleza");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<OportunidadeEntity>(builder =>
+        {
+            builder.ToTable("Oportunidade");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<FraquezaEntity>(builder =>
+        {
+            builder.ToTable("Fraqueza");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<AmeacaEntity>(builder =>
+        {
+            builder.ToTable("Ameaca");
             builder.HasKey(x => new { x.IdLiderado, x.Data });
             builder.Property(x => x.IdLiderado).IsRequired();
             builder.Property(x => x.Valor).IsRequired();

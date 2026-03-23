@@ -2,15 +2,23 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PeopleManagement.Application.Common.Storage;
+using PeopleManagement.Application.Features.Ameacas;
 using PeopleManagement.Application.Features.Atitudes;
 using PeopleManagement.Application.Features.Conhecimentos;
 using PeopleManagement.Application.Features.Dashboard;
 using PeopleManagement.Application.Features.Disc;
 using PeopleManagement.Application.Features.Expectativas;
+using PeopleManagement.Application.Features.Fortalezas;
+using PeopleManagement.Application.Features.Fraquezas;
 using PeopleManagement.Application.Features.Habilidades;
 using PeopleManagement.Application.Features.Liderados;
+using PeopleManagement.Application.Features.Metas;
 using PeopleManagement.Application.Features.NineBox;
+using PeopleManagement.Application.Features.Opcoes;
+using PeopleManagement.Application.Features.Oportunidades;
 using PeopleManagement.Application.Features.Personalidade;
+using PeopleManagement.Application.Features.ProximosPassos;
+using PeopleManagement.Application.Features.SituacaoAtual;
 using PeopleManagement.Application.Features.Valores;
 using PeopleManagement.Infrastructure.Persistence;
 using PeopleManagement.Infrastructure.Storage;
@@ -86,6 +94,46 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoExpectativasQuery, bool>, VerificarExistenciaLideradoExpectativasHandler>();
         services.AddScoped<IStorageCommandHandler<SalvarExpectativasCommand, StorageUnit>, SalvarExpectativasHandler>();
         services.AddScoped<IStorageCommandHandler<RemoverExpectativasCommand, StorageUnit>, RemoverExpectativasHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarMetasQuery, IReadOnlyCollection<MetasRegistro>>, ListarMetasHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoMetasQuery, bool>, VerificarExistenciaLideradoMetasHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarMetasCommand, StorageUnit>, SalvarMetasHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverMetasCommand, StorageUnit>, RemoverMetasHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarSituacaoAtualQuery, IReadOnlyCollection<SituacaoAtualRegistro>>, ListarSituacaoAtualHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoSituacaoAtualQuery, bool>, VerificarExistenciaLideradoSituacaoAtualHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarSituacaoAtualCommand, StorageUnit>, SalvarSituacaoAtualHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverSituacaoAtualCommand, StorageUnit>, RemoverSituacaoAtualHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarOpcoesQuery, IReadOnlyCollection<OpcoesRegistro>>, ListarOpcoesHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoOpcoesQuery, bool>, VerificarExistenciaLideradoOpcoesHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarOpcoesCommand, StorageUnit>, SalvarOpcoesHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverOpcoesCommand, StorageUnit>, RemoverOpcoesHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarProximosPassosQuery, IReadOnlyCollection<ProximosPassosRegistro>>, ListarProximosPassosHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoProximosPassosQuery, bool>, VerificarExistenciaLideradoProximosPassosHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarProximosPassosCommand, StorageUnit>, SalvarProximosPassosHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverProximosPassosCommand, StorageUnit>, RemoverProximosPassosHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarFortalezasQuery, IReadOnlyCollection<FortalezasRegistro>>, ListarFortalezasHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoFortalezasQuery, bool>, VerificarExistenciaLideradoFortalezasHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarFortalezasCommand, StorageUnit>, SalvarFortalezasHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverFortalezasCommand, StorageUnit>, RemoverFortalezasHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarOportunidadesQuery, IReadOnlyCollection<OportunidadesRegistro>>, ListarOportunidadesHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoOportunidadesQuery, bool>, VerificarExistenciaLideradoOportunidadesHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarOportunidadesCommand, StorageUnit>, SalvarOportunidadesHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverOportunidadesCommand, StorageUnit>, RemoverOportunidadesHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarFraquezasQuery, IReadOnlyCollection<FraquezasRegistro>>, ListarFraquezasHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoFraquezasQuery, bool>, VerificarExistenciaLideradoFraquezasHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarFraquezasCommand, StorageUnit>, SalvarFraquezasHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverFraquezasCommand, StorageUnit>, RemoverFraquezasHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarAmeacasQuery, IReadOnlyCollection<AmeacasRegistro>>, ListarAmeacasHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoAmeacasQuery, bool>, VerificarExistenciaLideradoAmeacasHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarAmeacasCommand, StorageUnit>, SalvarAmeacasHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverAmeacasCommand, StorageUnit>, RemoverAmeacasHandler>();
 
         return services;
     }

@@ -71,7 +71,13 @@ const DEFAULT_TOOLTIPS = {
   valores: ["Que tipo de ambiente de trabalho potencializa seu desempenho?"],
   expectativas: ["Que evolucao de carreira voce espera nos proximos 12 meses?"],
   metas: ["Quais metas pessoais/profissionais sao mais importantes agora?"],
+  situacaoAtual: ["Como voce descreveria o cenario atual com fatos e contexto?"],
+  opcoes: ["Que caminhos viaveis existem para avancar a partir daqui?"],
   proximosPassos: ["Qual sera seu proximo passo concreto ate o proximo 1:1?"],
+  fortalezas: ["Quais pontos fortes mais ajudam sua performance hoje?"],
+  oportunidades: ["Que oportunidades podem acelerar seu desenvolvimento ou impacto?"],
+  fraquezas: ["Que fragilidades estao limitando seus resultados neste momento?"],
+  ameacas: ["Que riscos externos ou internos podem prejudicar sua evolucao?"],
   redFlags: ["Existe algum fator de risco comportamental que merece atencao?"]
 };
 
@@ -165,13 +171,12 @@ function RadarChart({ values, id, className }) {
 
   const layers = [1, 2, 3, 4].map((layer) => {
     const r = (radius / 4) * layer;
-    const points = labels
+    return labels
       .map((_, index) => {
         const angle = (Math.PI * 2 * index) / labels.length - Math.PI / 2;
         return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
       })
       .join(" ");
-    return points;
   });
 
   const spokes = labels.map((label, index) => {
@@ -246,118 +251,6 @@ function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM
   );
 }
 
-function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil, propDrafts, onPropDraftChange, onActiveKeyChange, activePropertyKey, dateInputRef }) {
-  const [activePropertyIndex, setActivePropertyIndex] = useState(0);
-
-  useEffect(() => {
-    if (groups.length === 0) {
-      setActivePropertyIndex(0);
-      return;
-    }
-
-    const indexByKey = activePropertyKey
-      ? groups.findIndex((group) => group.tooltipKey === activePropertyKey)
-      : -1;
-
-    const nextIndex = indexByKey >= 0 ? indexByKey : 0;
-    setActivePropertyIndex(nextIndex);
-
-    if (onActiveKeyChange && indexByKey < 0) {
-      onActiveKeyChange(groups[nextIndex].tooltipKey);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups, activePropertyKey]);
-
-  function handleTabClick(index) {
-    setActivePropertyIndex(index);
-    if (onActiveKeyChange) {
-      onActiveKeyChange(groups[index].tooltipKey);
-    }
-  }
-
-  return (
-    <div className="prop-tabs">
-      <div className="prop-tabs-bar">
-        {groups.map((group, index) => (
-          <button
-            key={group.label}
-            type="button"
-            className={`prop-tab-btn ${index === activePropertyIndex ? "active" : ""}`}
-            onClick={() => handleTabClick(index)}
-          >
-            {group.label}
-          </button>
-        ))}
-      </div>
-
-      {groups.map((group, index) => {
-        const draft = propDrafts?.[group.tooltipKey] || { data: "", valor: "" };
-        return (
-          <div key={group.label} className={`prop-tab-panel ${index === activePropertyIndex ? "active" : ""}`}>
-            <table className="history-table classification-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-              <thead>
-                <tr>
-                  <th className="col-date" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>Data</th>
-                  <th className="col-value">
-                    {group.label} {renderInfoIcon(group.label, group.tooltipKey)}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="history-edit">
-                  <td className="date-cell">
-                    {isClassificacaoPerfil ? (
-                      <MaskedDateInput
-                        className="date-input"
-                        ariaLabel={`Data do registro de ${group.label}`}
-                        value={classificacaoPerfilDraft.dataDisc || ""}
-                        inputRef={index === activePropertyIndex ? dateInputRef : undefined}
-                        onChange={(nextValue) =>
-                          setClassificacaoPerfilDraft((d) => ({ ...d, dataDisc: nextValue }))
-                        }
-                      />
-                    ) : (
-                      <MaskedDateInput
-                        className="date-input"
-                        ariaLabel={`Data do registro de ${group.label}`}
-                        value={draft.data || ""}
-                        onChange={(nextValue) => onPropDraftChange?.(group.tooltipKey, "data", nextValue)}
-                      />
-                    )}
-                  </td>
-                  <td>
-                    {isClassificacaoPerfil ? (
-                      <textarea
-                        rows="2"
-                        placeholder={`Registrar ${group.label}`}
-                        value={classificacaoPerfilDraft[group.tooltipKey] || ""}
-                        onChange={e => setClassificacaoPerfilDraft(d => ({ ...d, [group.tooltipKey]: e.target.value }))}
-                      />
-                    ) : (
-                      <textarea
-                        rows="2"
-                        placeholder={`Registrar ${group.label}`}
-                        value={draft.valor || ""}
-                        onChange={e => onPropDraftChange?.(group.tooltipKey, "valor", e.target.value)}
-                      />
-                    )}
-                  </td>
-                </tr>
-                {group.rows.map((row) => (
-                  <tr key={`${row.data}-${row.valor}`}>
-                    <td>{row.data}</td>
-                    <td>{row.valor}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, onDraftChange, onSaveColumn, dateInputRefs }) {
   return (
     <div className="classification-columns">
@@ -423,88 +316,26 @@ function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificac
   );
 }
 
-function ChaveSection({
-  conhecimentosHistorico,
-  conhecimentosDraft,
-  onConhecimentosDraftChange,
-  onSaveConhecimentos,
-  conhecimentosDateInputRef,
-  habilidadesHistorico,
-  habilidadesDraft,
-  onHabilidadesDraftChange,
-  onSaveHabilidades,
-  habilidadesDateInputRef,
-  atitudesHistorico,
-  atitudesDraft,
-  onAtitudesDraftChange,
-  onSaveAtitudes,
-  atitudesDateInputRef,
-  valoresHistorico,
-  valoresDraft,
-  onValoresDraftChange,
-  onSaveValores,
-  valoresDateInputRef,
-  expectativasHistorico,
-  expectativasDraft,
-  onExpectativasDraftChange,
-  onSaveExpectativas,
-  expectativasDateInputRef,
-  renderInfoIcon
-}) {
-  const [activeProperty, setActiveProperty] = useState("conhecimentos");
+function HistoricalPropertyTabsSection({ sections, renderInfoIcon, initialActiveKey }) {
+  const [activeProperty, setActiveProperty] = useState(initialActiveKey || sections[0]?.key || "");
 
-  const sections = [
-    {
-      key: "conhecimentos",
-      label: "Conhecimentos",
-      tooltipKey: "conhecimentos",
-      historico: conhecimentosHistorico,
-      draft: conhecimentosDraft,
-      onDraftChange: onConhecimentosDraftChange,
-      onSave: onSaveConhecimentos,
-      dateInputRef: conhecimentosDateInputRef
-    },
-    {
-      key: "habilidades",
-      label: "Habilidades",
-      tooltipKey: "habilidades",
-      historico: habilidadesHistorico,
-      draft: habilidadesDraft,
-      onDraftChange: onHabilidadesDraftChange,
-      onSave: onSaveHabilidades,
-      dateInputRef: habilidadesDateInputRef
-    },
-    {
-      key: "atitudes",
-      label: "Atitudes",
-      tooltipKey: "atitudes",
-      historico: atitudesHistorico,
-      draft: atitudesDraft,
-      onDraftChange: onAtitudesDraftChange,
-      onSave: onSaveAtitudes,
-      dateInputRef: atitudesDateInputRef
-    },
-    {
-      key: "valores",
-      label: "Valores",
-      tooltipKey: "valores",
-      historico: valoresHistorico,
-      draft: valoresDraft,
-      onDraftChange: onValoresDraftChange,
-      onSave: onSaveValores,
-      dateInputRef: valoresDateInputRef
-    },
-    {
-      key: "expectativas",
-      label: "Expectativas",
-      tooltipKey: "expectativas",
-      historico: expectativasHistorico,
-      draft: expectativasDraft,
-      onDraftChange: onExpectativasDraftChange,
-      onSave: onSaveExpectativas,
-      dateInputRef: expectativasDateInputRef
+  useEffect(() => {
+    if (!sections.length) {
+      setActiveProperty("");
+      return;
     }
-  ];
+
+    const hasCurrentSection = sections.some((section) => section.key === activeProperty);
+    if (hasCurrentSection) {
+      return;
+    }
+
+    const fallbackKey = sections.some((section) => section.key === initialActiveKey)
+      ? initialActiveKey
+      : sections[0]?.key || "";
+
+    setActiveProperty(fallbackKey);
+  }, [sections, activeProperty, initialActiveKey]);
 
   return (
     <div className="prop-tabs">
@@ -570,6 +401,228 @@ function ChaveSection({
       ))}
     </div>
   );
+}
+
+function ChaveSection({
+  conhecimentosHistorico,
+  conhecimentosDraft,
+  onConhecimentosDraftChange,
+  onSaveConhecimentos,
+  conhecimentosDateInputRef,
+  habilidadesHistorico,
+  habilidadesDraft,
+  onHabilidadesDraftChange,
+  onSaveHabilidades,
+  habilidadesDateInputRef,
+  atitudesHistorico,
+  atitudesDraft,
+  onAtitudesDraftChange,
+  onSaveAtitudes,
+  atitudesDateInputRef,
+  valoresHistorico,
+  valoresDraft,
+  onValoresDraftChange,
+  onSaveValores,
+  valoresDateInputRef,
+  expectativasHistorico,
+  expectativasDraft,
+  onExpectativasDraftChange,
+  onSaveExpectativas,
+  expectativasDateInputRef,
+  renderInfoIcon
+}) {
+  const sections = [
+    {
+      key: "conhecimentos",
+      label: "Conhecimentos",
+      tooltipKey: "conhecimentos",
+      historico: conhecimentosHistorico,
+      draft: conhecimentosDraft,
+      onDraftChange: onConhecimentosDraftChange,
+      onSave: onSaveConhecimentos,
+      dateInputRef: conhecimentosDateInputRef
+    },
+    {
+      key: "habilidades",
+      label: "Habilidades",
+      tooltipKey: "habilidades",
+      historico: habilidadesHistorico,
+      draft: habilidadesDraft,
+      onDraftChange: onHabilidadesDraftChange,
+      onSave: onSaveHabilidades,
+      dateInputRef: habilidadesDateInputRef
+    },
+    {
+      key: "atitudes",
+      label: "Atitudes",
+      tooltipKey: "atitudes",
+      historico: atitudesHistorico,
+      draft: atitudesDraft,
+      onDraftChange: onAtitudesDraftChange,
+      onSave: onSaveAtitudes,
+      dateInputRef: atitudesDateInputRef
+    },
+    {
+      key: "valores",
+      label: "Valores",
+      tooltipKey: "valores",
+      historico: valoresHistorico,
+      draft: valoresDraft,
+      onDraftChange: onValoresDraftChange,
+      onSave: onSaveValores,
+      dateInputRef: valoresDateInputRef
+    },
+    {
+      key: "expectativas",
+      label: "Expectativas",
+      tooltipKey: "expectativas",
+      historico: expectativasHistorico,
+      draft: expectativasDraft,
+      onDraftChange: onExpectativasDraftChange,
+      onSave: onSaveExpectativas,
+      dateInputRef: expectativasDateInputRef
+    }
+  ];
+
+  return <HistoricalPropertyTabsSection sections={sections} renderInfoIcon={renderInfoIcon} initialActiveKey="conhecimentos" />;
+}
+
+function GrowPdiSection({
+  metasHistorico,
+  metasDraft,
+  onMetasDraftChange,
+  onSaveMetas,
+  metasDateInputRef,
+  situacaoAtualHistorico,
+  situacaoAtualDraft,
+  onSituacaoAtualDraftChange,
+  onSaveSituacaoAtual,
+  situacaoAtualDateInputRef,
+  opcoesHistorico,
+  opcoesDraft,
+  onOpcoesDraftChange,
+  onSaveOpcoes,
+  opcoesDateInputRef,
+  proximosPassosHistorico,
+  proximosPassosDraft,
+  onProximosPassosDraftChange,
+  onSaveProximosPassos,
+  proximosPassosDateInputRef,
+  renderInfoIcon
+}) {
+  const sections = [
+    {
+      key: "metas",
+      label: "Metas",
+      tooltipKey: "metas",
+      historico: metasHistorico,
+      draft: metasDraft,
+      onDraftChange: onMetasDraftChange,
+      onSave: onSaveMetas,
+      dateInputRef: metasDateInputRef
+    },
+    {
+      key: "situacaoAtual",
+      label: "Situacao Atual",
+      tooltipKey: "situacaoAtual",
+      historico: situacaoAtualHistorico,
+      draft: situacaoAtualDraft,
+      onDraftChange: onSituacaoAtualDraftChange,
+      onSave: onSaveSituacaoAtual,
+      dateInputRef: situacaoAtualDateInputRef
+    },
+    {
+      key: "opcoes",
+      label: "Opcoes",
+      tooltipKey: "opcoes",
+      historico: opcoesHistorico,
+      draft: opcoesDraft,
+      onDraftChange: onOpcoesDraftChange,
+      onSave: onSaveOpcoes,
+      dateInputRef: opcoesDateInputRef
+    },
+    {
+      key: "proximosPassos",
+      label: "Proximos Passos",
+      tooltipKey: "proximosPassos",
+      historico: proximosPassosHistorico,
+      draft: proximosPassosDraft,
+      onDraftChange: onProximosPassosDraftChange,
+      onSave: onSaveProximosPassos,
+      dateInputRef: proximosPassosDateInputRef
+    }
+  ];
+
+  return <HistoricalPropertyTabsSection sections={sections} renderInfoIcon={renderInfoIcon} initialActiveKey="metas" />;
+}
+
+function SwotSection({
+  fortalezasHistorico,
+  fortalezasDraft,
+  onFortalezasDraftChange,
+  onSaveFortalezas,
+  fortalezasDateInputRef,
+  oportunidadesHistorico,
+  oportunidadesDraft,
+  onOportunidadesDraftChange,
+  onSaveOportunidades,
+  oportunidadesDateInputRef,
+  fraquezasHistorico,
+  fraquezasDraft,
+  onFraquezasDraftChange,
+  onSaveFraquezas,
+  fraquezasDateInputRef,
+  ameacasHistorico,
+  ameacasDraft,
+  onAmeacasDraftChange,
+  onSaveAmeacas,
+  ameacasDateInputRef,
+  renderInfoIcon
+}) {
+  const sections = [
+    {
+      key: "fortalezas",
+      label: "Fortalezas",
+      tooltipKey: "fortalezas",
+      historico: fortalezasHistorico,
+      draft: fortalezasDraft,
+      onDraftChange: onFortalezasDraftChange,
+      onSave: onSaveFortalezas,
+      dateInputRef: fortalezasDateInputRef
+    },
+    {
+      key: "oportunidades",
+      label: "Oportunidades",
+      tooltipKey: "oportunidades",
+      historico: oportunidadesHistorico,
+      draft: oportunidadesDraft,
+      onDraftChange: onOportunidadesDraftChange,
+      onSave: onSaveOportunidades,
+      dateInputRef: oportunidadesDateInputRef
+    },
+    {
+      key: "fraquezas",
+      label: "Fraquezas",
+      tooltipKey: "fraquezas",
+      historico: fraquezasHistorico,
+      draft: fraquezasDraft,
+      onDraftChange: onFraquezasDraftChange,
+      onSave: onSaveFraquezas,
+      dateInputRef: fraquezasDateInputRef
+    },
+    {
+      key: "ameacas",
+      label: "Ameacas",
+      tooltipKey: "ameacas",
+      historico: ameacasHistorico,
+      draft: ameacasDraft,
+      onDraftChange: onAmeacasDraftChange,
+      onSave: onSaveAmeacas,
+      dateInputRef: ameacasDateInputRef
+    }
+  ];
+
+  return <HistoricalPropertyTabsSection sections={sections} renderInfoIcon={renderInfoIcon} initialActiveKey="fortalezas" />;
 }
 
 function App() {
@@ -643,10 +696,23 @@ function App() {
   const [valoresDraft, setValoresDraft] = useState({ data: "", valor: "" });
   const [expectativasHistorico, setExpectativasHistorico] = useState([]);
   const [expectativasDraft, setExpectativasDraft] = useState({ data: "", valor: "" });
+  const [metasHistorico, setMetasHistorico] = useState([]);
+  const [metasDraft, setMetasDraft] = useState({ data: "", valor: "" });
+  const [situacaoAtualHistorico, setSituacaoAtualHistorico] = useState([]);
+  const [situacaoAtualDraft, setSituacaoAtualDraft] = useState({ data: "", valor: "" });
+  const [opcoesHistorico, setOpcoesHistorico] = useState([]);
+  const [opcoesDraft, setOpcoesDraft] = useState({ data: "", valor: "" });
+  const [proximosPassosHistorico, setProximosPassosHistorico] = useState([]);
+  const [proximosPassosDraft, setProximosPassosDraft] = useState({ data: "", valor: "" });
+  const [fortalezasHistorico, setFortalezasHistorico] = useState([]);
+  const [fortalezasDraft, setFortalezasDraft] = useState({ data: "", valor: "" });
+  const [oportunidadesHistorico, setOportunidadesHistorico] = useState([]);
+  const [oportunidadesDraft, setOportunidadesDraft] = useState({ data: "", valor: "" });
+  const [fraquezasHistorico, setFraquezasHistorico] = useState([]);
+  const [fraquezasDraft, setFraquezasDraft] = useState({ data: "", valor: "" });
+  const [ameacasHistorico, setAmeacasHistorico] = useState([]);
+  const [ameacasDraft, setAmeacasDraft] = useState({ data: "", valor: "" });
   
-  const [propHistoricaEntries, setPropHistoricaEntries] = useState({});
-  const [propDrafts, setPropDrafts] = useState({});
-  const [activePropKeys, setActivePropKeys] = useState({});
   const prevLideradoIdRef = useRef(null);
   const classificacaoDataInputRefs = useRef({});
   const conhecimentosDateInputRef = useRef(null);
@@ -654,6 +720,14 @@ function App() {
   const atitudesDateInputRef = useRef(null);
   const valoresDateInputRef = useRef(null);
   const expectativasDateInputRef = useRef(null);
+  const metasDateInputRef = useRef(null);
+  const situacaoAtualDateInputRef = useRef(null);
+  const opcoesDateInputRef = useRef(null);
+  const proximosPassosDateInputRef = useRef(null);
+  const fortalezasDateInputRef = useRef(null);
+  const oportunidadesDateInputRef = useRef(null);
+  const fraquezasDateInputRef = useRef(null);
+  const ameacasDateInputRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -751,7 +825,7 @@ function App() {
       setError("");
 
       try {
-        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse, conhecimentosResponse, habilidadesResponse, atitudesResponse, valoresResponse, expectativasResponse] = await Promise.all([
+        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse, conhecimentosResponse, habilidadesResponse, atitudesResponse, valoresResponse, expectativasResponse, metasResponse, situacaoAtualResponse, opcoesResponse, proximosPassosResponse, fortalezasResponse, oportunidadesResponse, fraquezasResponse, ameacasResponse] = await Promise.all([
           requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`),
           requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`),
           requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`),
@@ -762,7 +836,15 @@ function App() {
           requestJson(`/api/habilidades/${selectedLideradoId}`),
           requestJson(`/api/atitudes/${selectedLideradoId}`),
           requestJson(`/api/valores/${selectedLideradoId}`),
-          requestJson(`/api/expectativas/${selectedLideradoId}`)
+          requestJson(`/api/expectativas/${selectedLideradoId}`),
+          requestJson(`/api/metas/${selectedLideradoId}`),
+          requestJson(`/api/situacao-atual/${selectedLideradoId}`),
+          requestJson(`/api/opcoes/${selectedLideradoId}`),
+          requestJson(`/api/proximos-passos/${selectedLideradoId}`),
+          requestJson(`/api/fortalezas/${selectedLideradoId}`),
+          requestJson(`/api/oportunidades/${selectedLideradoId}`),
+          requestJson(`/api/fraquezas/${selectedLideradoId}`),
+          requestJson(`/api/ameacas/${selectedLideradoId}`)
         ]);
 
         const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
@@ -788,17 +870,31 @@ function App() {
         setAtitudesHistorico(atitudesResponse?.registros || []);
         setValoresHistorico(valoresResponse?.registros || []);
         setExpectativasHistorico(expectativasResponse?.registros || []);
+        setMetasHistorico(metasResponse?.registros || []);
+        setSituacaoAtualHistorico(situacaoAtualResponse?.registros || []);
+        setOpcoesHistorico(opcoesResponse?.registros || []);
+        setProximosPassosHistorico(proximosPassosResponse?.registros || []);
+        setFortalezasHistorico(fortalezasResponse?.registros || []);
+        setOportunidadesHistorico(oportunidadesResponse?.registros || []);
+        setFraquezasHistorico(fraquezasResponse?.registros || []);
+        setAmeacasHistorico(ameacasResponse?.registros || []);
 
         if (isNewLiderado) {
           setCultureIndex(0);
           setActiveTab(TAB_ORDER[0]);
-          setPropDrafts({});
           setConhecimentosDraft({ data: "", valor: "" });
           setHabilidadesDraft({ data: "", valor: "" });
           setAtitudesDraft({ data: "", valor: "" });
           setValoresDraft({ data: "", valor: "" });
           setExpectativasDraft({ data: "", valor: "" });
-          setActivePropKeys({});
+          setMetasDraft({ data: "", valor: "" });
+          setSituacaoAtualDraft({ data: "", valor: "" });
+          setOpcoesDraft({ data: "", valor: "" });
+          setProximosPassosDraft({ data: "", valor: "" });
+          setFortalezasDraft({ data: "", valor: "" });
+          setOportunidadesDraft({ data: "", valor: "" });
+          setFraquezasDraft({ data: "", valor: "" });
+          setAmeacasDraft({ data: "", valor: "" });
         }
 
         const informacoes = visao?.conteudo?.informacoesPessoais;
@@ -904,6 +1000,38 @@ function App() {
           return;
         }
 
+        if (activeTab === "GROW / PDI") {
+          const [metasResponse, situacaoAtualResponse, opcoesResponse, proximosPassosResponse] = await Promise.all([
+            requestJson(`/api/metas/${selectedLideradoId}`),
+            requestJson(`/api/situacao-atual/${selectedLideradoId}`),
+            requestJson(`/api/opcoes/${selectedLideradoId}`),
+            requestJson(`/api/proximos-passos/${selectedLideradoId}`)
+          ]);
+          if (!active) return;
+
+          setMetasHistorico(metasResponse?.registros || []);
+          setSituacaoAtualHistorico(situacaoAtualResponse?.registros || []);
+          setOpcoesHistorico(opcoesResponse?.registros || []);
+          setProximosPassosHistorico(proximosPassosResponse?.registros || []);
+          return;
+        }
+
+        if (activeTab === "SWOT") {
+          const [fortalezasResponse, oportunidadesResponse, fraquezasResponse, ameacasResponse] = await Promise.all([
+            requestJson(`/api/fortalezas/${selectedLideradoId}`),
+            requestJson(`/api/oportunidades/${selectedLideradoId}`),
+            requestJson(`/api/fraquezas/${selectedLideradoId}`),
+            requestJson(`/api/ameacas/${selectedLideradoId}`)
+          ]);
+          if (!active) return;
+
+          setFortalezasHistorico(fortalezasResponse?.registros || []);
+          setOportunidadesHistorico(oportunidadesResponse?.registros || []);
+          setFraquezasHistorico(fraquezasResponse?.registros || []);
+          setAmeacasHistorico(ameacasResponse?.registros || []);
+          return;
+        }
+
         if (activeTab === "Feedbacks") {
           const feedbackResponse = await requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`);
           if (!active) return;
@@ -928,29 +1056,8 @@ function App() {
 
           setLeaderView(visao?.conteudo || null);
           setCultureEntries(radarResponses.map((item) => item.radar).filter(Boolean));
-          return;
         }
 
-        const tabToTypes = {
-          "GROW / PDI": ["metas", "situacaoAtual", "opcoes", "proximosPassos"],
-          SWOT: ["fortalezas", "oportunidades", "fraquezas", "ameacas"]
-        };
-
-        const types = tabToTypes[activeTab];
-        if (types?.length) {
-          const responses = await Promise.all(
-            types.map((tipo) => requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`))
-          );
-          if (!active) return;
-
-          setPropHistoricaEntries((prev) => {
-            const next = { ...prev };
-            types.forEach((tipo, idx) => {
-              next[tipo] = responses[idx]?.registros || [];
-            });
-            return next;
-          });
-        }
       } catch (loadError) {
         if (active) {
           setError(loadError.message);
@@ -1037,25 +1144,18 @@ function App() {
   }, [dashboardCards, leaderView, selectedLideradoId]);
 
   const propertySectionData = useMemo(() => {
-    const buildRows = (sectionName, propertyKey) => {
-      if (sectionName === "Classificacao de Perfil") {
-        if (propertyKey === "disc") return discHistorico.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
-        if (propertyKey === "personalidade") return personalidadeHistorico.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
-        if (propertyKey === "nineBox") return nineBoxHistorico.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
-      }
-      const entries = propHistoricaEntries[propertyKey] || [];
-      return entries.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
+    return {
+      "Classificacao de Perfil": PROPERTY_SECTION_CONFIG["Classificacao de Perfil"].properties.map((property) => ({
+        ...property,
+        rows:
+          property.tooltipKey === "disc"
+            ? discHistorico.map((r) => ({ data: toDisplayDate(r.data), valor: r.valor }))
+            : property.tooltipKey === "personalidade"
+              ? personalidadeHistorico.map((r) => ({ data: toDisplayDate(r.data), valor: r.valor }))
+              : nineBoxHistorico.map((r) => ({ data: toDisplayDate(r.data), valor: r.valor }))
+      }))
     };
-    return Object.fromEntries(
-      Object.keys(PROPERTY_SECTION_CONFIG).map((sectionName) => [
-        sectionName,
-        PROPERTY_SECTION_CONFIG[sectionName].properties.map((property) => ({
-          ...property,
-          rows: buildRows(sectionName, property.tooltipKey)
-        }))
-      ])
-    );
-  }, [discHistorico, personalidadeHistorico, nineBoxHistorico, propHistoricaEntries]);
+  }, [discHistorico, personalidadeHistorico, nineBoxHistorico]);
 
   const dashboardCardsWithFallbackRadar = useMemo(() => {
     return dashboardCards.map((card) => {
@@ -1337,44 +1437,40 @@ function App() {
     }
   }
 
-  async function handleSaveConhecimentos() {
+  async function saveHistoricalEntry({ draft, endpoint, label, setHistorico, setDraft, dateInputRef }) {
     if (!selectedLideradoId) {
       setError("Nenhum liderado selecionado.");
       return;
     }
 
-    const draft = conhecimentosDraft || { data: "", valor: "" };
-    const isoDate = toIsoDate(draft.data);
+    const currentDraft = draft || { data: "", valor: "" };
+    const isoDate = toIsoDate(currentDraft.data);
     if (!isoDate) {
-      setError(buildDiscDateErrorMessage(draft.data));
+      setError(`Informe a data de ${label} no formato dd/MM/aaaa (ex.: 27/11/2025).`);
       return;
     }
 
-    if (!draft.valor?.trim()) {
-      setError("O valor é obrigatório.");
+    if (!currentDraft.valor?.trim()) {
+      setError("O valor e obrigatorio.");
       return;
     }
 
     try {
-      await requestJson(`/api/conhecimentos`, {
+      await requestJson(endpoint, {
         method: "POST",
         body: JSON.stringify({
           lideradoId: selectedLideradoId,
-          valor: draft.valor.trim(),
+          valor: currentDraft.valor.trim(),
           data: isoDate
         })
       });
 
-      // Reload Conhecimentos histórico
-      const response = await requestJson(`/api/conhecimentos/${selectedLideradoId}`);
-      setConhecimentosHistorico(response?.registros || []);
+      const response = await requestJson(`${endpoint}/${selectedLideradoId}`);
+      setHistorico(response?.registros || []);
+      setDraft({ data: "", valor: "" });
 
-      // Clear draft
-      setConhecimentosDraft({ data: "", valor: "" });
-
-      // Return focus to date input
       requestAnimationFrame(() => {
-        conhecimentosDateInputRef.current?.focus();
+        dateInputRef.current?.focus();
       });
 
       setError("");
@@ -1382,178 +1478,149 @@ function App() {
     } catch (e) {
       setError(e.message);
     }
+  }
+
+  async function handleSaveConhecimentos() {
+    await saveHistoricalEntry({
+      draft: conhecimentosDraft,
+      endpoint: "/api/conhecimentos",
+      label: "Conhecimentos",
+      setHistorico: setConhecimentosHistorico,
+      setDraft: setConhecimentosDraft,
+      dateInputRef: conhecimentosDateInputRef
+    });
   }
 
   async function handleSaveHabilidades() {
-    if (!selectedLideradoId) {
-      setError("Nenhum liderado selecionado.");
-      return;
-    }
-
-    const draft = habilidadesDraft || { data: "", valor: "" };
-    const isoDate = toIsoDate(draft.data);
-    if (!isoDate) {
-      setError("Informe a data de Habilidades no formato dd/MM/aaaa (ex.: 27/11/2025).");
-      return;
-    }
-
-    if (!draft.valor?.trim()) {
-      setError("O valor e obrigatorio.");
-      return;
-    }
-
-    try {
-      await requestJson(`/api/habilidades`, {
-        method: "POST",
-        body: JSON.stringify({
-          lideradoId: selectedLideradoId,
-          valor: draft.valor.trim(),
-          data: isoDate
-        })
-      });
-
-      const response = await requestJson(`/api/habilidades/${selectedLideradoId}`);
-      setHabilidadesHistorico(response?.registros || []);
-      setHabilidadesDraft({ data: "", valor: "" });
-
-      requestAnimationFrame(() => {
-        habilidadesDateInputRef.current?.focus();
-      });
-
-      setError("");
-      await refreshCurrentLeader();
-    } catch (e) {
-      setError(e.message);
-    }
+    await saveHistoricalEntry({
+      draft: habilidadesDraft,
+      endpoint: "/api/habilidades",
+      label: "Habilidades",
+      setHistorico: setHabilidadesHistorico,
+      setDraft: setHabilidadesDraft,
+      dateInputRef: habilidadesDateInputRef
+    });
   }
 
   async function handleSaveAtitudes() {
-    if (!selectedLideradoId) {
-      setError("Nenhum liderado selecionado.");
-      return;
-    }
-
-    const draft = atitudesDraft || { data: "", valor: "" };
-    const isoDate = toIsoDate(draft.data);
-    if (!isoDate) {
-      setError("Informe a data de Atitudes no formato dd/MM/aaaa (ex.: 27/11/2025).");
-      return;
-    }
-
-    if (!draft.valor?.trim()) {
-      setError("O valor e obrigatorio.");
-      return;
-    }
-
-    try {
-      await requestJson(`/api/atitudes`, {
-        method: "POST",
-        body: JSON.stringify({
-          lideradoId: selectedLideradoId,
-          valor: draft.valor.trim(),
-          data: isoDate
-        })
-      });
-
-      const response = await requestJson(`/api/atitudes/${selectedLideradoId}`);
-      setAtitudesHistorico(response?.registros || []);
-      setAtitudesDraft({ data: "", valor: "" });
-
-      requestAnimationFrame(() => {
-        atitudesDateInputRef.current?.focus();
-      });
-
-      setError("");
-      await refreshCurrentLeader();
-    } catch (e) {
-      setError(e.message);
-    }
+    await saveHistoricalEntry({
+      draft: atitudesDraft,
+      endpoint: "/api/atitudes",
+      label: "Atitudes",
+      setHistorico: setAtitudesHistorico,
+      setDraft: setAtitudesDraft,
+      dateInputRef: atitudesDateInputRef
+    });
   }
 
   async function handleSaveValores() {
-    if (!selectedLideradoId) {
-      setError("Nenhum liderado selecionado.");
-      return;
-    }
-
-    const draft = valoresDraft || { data: "", valor: "" };
-    const isoDate = toIsoDate(draft.data);
-    if (!isoDate) {
-      setError("Informe a data de Valores no formato dd/MM/aaaa (ex.: 27/11/2025).");
-      return;
-    }
-
-    if (!draft.valor?.trim()) {
-      setError("O valor e obrigatorio.");
-      return;
-    }
-
-    try {
-      await requestJson(`/api/valores`, {
-        method: "POST",
-        body: JSON.stringify({
-          lideradoId: selectedLideradoId,
-          valor: draft.valor.trim(),
-          data: isoDate
-        })
-      });
-
-      const response = await requestJson(`/api/valores/${selectedLideradoId}`);
-      setValoresHistorico(response?.registros || []);
-      setValoresDraft({ data: "", valor: "" });
-
-      requestAnimationFrame(() => {
-        valoresDateInputRef.current?.focus();
-      });
-
-      setError("");
-      await refreshCurrentLeader();
-    } catch (e) {
-      setError(e.message);
-    }
+    await saveHistoricalEntry({
+      draft: valoresDraft,
+      endpoint: "/api/valores",
+      label: "Valores",
+      setHistorico: setValoresHistorico,
+      setDraft: setValoresDraft,
+      dateInputRef: valoresDateInputRef
+    });
   }
 
   async function handleSaveExpectativas() {
-    if (!selectedLideradoId) {
-      setError("Nenhum liderado selecionado.");
-      return;
-    }
+    await saveHistoricalEntry({
+      draft: expectativasDraft,
+      endpoint: "/api/expectativas",
+      label: "Expectativas",
+      setHistorico: setExpectativasHistorico,
+      setDraft: setExpectativasDraft,
+      dateInputRef: expectativasDateInputRef
+    });
+  }
 
-    const draft = expectativasDraft || { data: "", valor: "" };
-    const isoDate = toIsoDate(draft.data);
-    if (!isoDate) {
-      setError("Informe a data de Expectativas no formato dd/MM/aaaa (ex.: 27/11/2025).");
-      return;
-    }
+  async function handleSaveMetas() {
+    await saveHistoricalEntry({
+      draft: metasDraft,
+      endpoint: "/api/metas",
+      label: "Metas",
+      setHistorico: setMetasHistorico,
+      setDraft: setMetasDraft,
+      dateInputRef: metasDateInputRef
+    });
+  }
 
-    if (!draft.valor?.trim()) {
-      setError("O valor e obrigatorio.");
-      return;
-    }
+  async function handleSaveSituacaoAtual() {
+    await saveHistoricalEntry({
+      draft: situacaoAtualDraft,
+      endpoint: "/api/situacao-atual",
+      label: "Situacao Atual",
+      setHistorico: setSituacaoAtualHistorico,
+      setDraft: setSituacaoAtualDraft,
+      dateInputRef: situacaoAtualDateInputRef
+    });
+  }
 
-    try {
-      await requestJson(`/api/expectativas`, {
-        method: "POST",
-        body: JSON.stringify({
-          lideradoId: selectedLideradoId,
-          valor: draft.valor.trim(),
-          data: isoDate
-        })
-      });
+  async function handleSaveOpcoes() {
+    await saveHistoricalEntry({
+      draft: opcoesDraft,
+      endpoint: "/api/opcoes",
+      label: "Opcoes",
+      setHistorico: setOpcoesHistorico,
+      setDraft: setOpcoesDraft,
+      dateInputRef: opcoesDateInputRef
+    });
+  }
 
-      const response = await requestJson(`/api/expectativas/${selectedLideradoId}`);
-      setExpectativasHistorico(response?.registros || []);
-      setExpectativasDraft({ data: "", valor: "" });
+  async function handleSaveProximosPassos() {
+    await saveHistoricalEntry({
+      draft: proximosPassosDraft,
+      endpoint: "/api/proximos-passos",
+      label: "Proximos Passos",
+      setHistorico: setProximosPassosHistorico,
+      setDraft: setProximosPassosDraft,
+      dateInputRef: proximosPassosDateInputRef
+    });
+  }
 
-      requestAnimationFrame(() => {
-        expectativasDateInputRef.current?.focus();
-      });
+  async function handleSaveFortalezas() {
+    await saveHistoricalEntry({
+      draft: fortalezasDraft,
+      endpoint: "/api/fortalezas",
+      label: "Fortalezas",
+      setHistorico: setFortalezasHistorico,
+      setDraft: setFortalezasDraft,
+      dateInputRef: fortalezasDateInputRef
+    });
+  }
 
-      setError("");
-      await refreshCurrentLeader();
-    } catch (e) {
-      setError(e.message);
-    }
+  async function handleSaveOportunidades() {
+    await saveHistoricalEntry({
+      draft: oportunidadesDraft,
+      endpoint: "/api/oportunidades",
+      label: "Oportunidades",
+      setHistorico: setOportunidadesHistorico,
+      setDraft: setOportunidadesDraft,
+      dateInputRef: oportunidadesDateInputRef
+    });
+  }
+
+  async function handleSaveFraquezas() {
+    await saveHistoricalEntry({
+      draft: fraquezasDraft,
+      endpoint: "/api/fraquezas",
+      label: "Fraquezas",
+      setHistorico: setFraquezasHistorico,
+      setDraft: setFraquezasDraft,
+      dateInputRef: fraquezasDateInputRef
+    });
+  }
+
+  async function handleSaveAmeacas() {
+    await saveHistoricalEntry({
+      draft: ameacasDraft,
+      endpoint: "/api/ameacas",
+      label: "Ameacas",
+      setHistorico: setAmeacasHistorico,
+      setDraft: setAmeacasDraft,
+      dateInputRef: ameacasDateInputRef
+    });
   }
 
   function getTabLabel(tabName) {
@@ -1601,36 +1668,6 @@ function App() {
       setTooltipModal({ open: false, key: "", label: "", text: "" });
     } catch (saveError) {
       setError(saveError.message);
-    }
-  }
-
-  async function handleSavePropHistorica(sectionName) {
-    const config = PROPERTY_SECTION_CONFIG[sectionName];
-    const tipo = activePropKeys[sectionName] || config?.properties[0]?.tooltipKey;
-    if (!tipo || !selectedLideradoId) return;
-
-    const draft = propDrafts[tipo] || { data: "", valor: "" };
-    const isoDate = toIsoDate(draft.data);
-    if (!isoDate) {
-      setError(buildDiscDateErrorMessage(draft.data));
-      return;
-    }
-    if (!draft.valor?.trim()) {
-      setError("O valor e obrigatorio.");
-      return;
-    }
-
-    try {
-      await requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`, {
-        method: "POST",
-        body: JSON.stringify({ valor: draft.valor.trim(), data: isoDate })
-      });
-      const response = await requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`);
-      setPropHistoricaEntries(prev => ({ ...prev, [tipo]: response?.registros || [] }));
-      setPropDrafts(prev => ({ ...prev, [tipo]: { data: "", valor: "" } }));
-      setError("");
-    } catch (e) {
-      setError(e.message);
     }
   }
 
@@ -2245,33 +2282,131 @@ function App() {
                 </section>
               ) : null}
 
-              {["GROW / PDI", "SWOT"].includes(activeTab) ? (
+              {activeTab === "GROW / PDI" ? (
                 <section className="panel section single-column">
                   <div className="panel-header">
                     <h3 className="section-title">{activeTab}</h3>
-                    <button
-                      type="button"
-                      className="btn ghost small"
-                      onClick={() => handleSavePropHistorica(activeTab)}
-                    >
-                      Salvar
-                    </button>
                   </div>
                   <div className="fields fields--prop-tabs">
-                    <PropertyTabsSection
-                      groups={propertySectionData[activeTab] || []}
-                      renderInfoIcon={renderInfoIcon}
-                      activePropertyKey={activePropKeys[activeTab]}
-                      onActiveKeyChange={(key) =>
-                        setActivePropKeys((prev) => ({ ...prev, [activeTab]: key }))
-                      }
-                      propDrafts={propDrafts}
-                      onPropDraftChange={(tipo, field, value) =>
-                        setPropDrafts((prev) => ({
+                    <GrowPdiSection
+                      metasHistorico={(metasHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      metasDraft={metasDraft}
+                      onMetasDraftChange={(field, value) =>
+                        setMetasDraft((prev) => ({
                           ...prev,
-                          [tipo]: { ...(prev[tipo] || { data: "", valor: "" }), [field]: value }
+                          [field]: value
                         }))
                       }
+                      onSaveMetas={handleSaveMetas}
+                      metasDateInputRef={metasDateInputRef}
+                      situacaoAtualHistorico={(situacaoAtualHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      situacaoAtualDraft={situacaoAtualDraft}
+                      onSituacaoAtualDraftChange={(field, value) =>
+                        setSituacaoAtualDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveSituacaoAtual={handleSaveSituacaoAtual}
+                      situacaoAtualDateInputRef={situacaoAtualDateInputRef}
+                      opcoesHistorico={(opcoesHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      opcoesDraft={opcoesDraft}
+                      onOpcoesDraftChange={(field, value) =>
+                        setOpcoesDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveOpcoes={handleSaveOpcoes}
+                      opcoesDateInputRef={opcoesDateInputRef}
+                      proximosPassosHistorico={(proximosPassosHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      proximosPassosDraft={proximosPassosDraft}
+                      onProximosPassosDraftChange={(field, value) =>
+                        setProximosPassosDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveProximosPassos={handleSaveProximosPassos}
+                      proximosPassosDateInputRef={proximosPassosDateInputRef}
+                      renderInfoIcon={renderInfoIcon}
+                    />
+                  </div>
+                </section>
+              ) : null}
+
+              {activeTab === "SWOT" ? (
+                <section className="panel section single-column">
+                  <div className="panel-header">
+                    <h3 className="section-title">{activeTab}</h3>
+                  </div>
+                  <div className="fields fields--prop-tabs">
+                    <SwotSection
+                      fortalezasHistorico={(fortalezasHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      fortalezasDraft={fortalezasDraft}
+                      onFortalezasDraftChange={(field, value) =>
+                        setFortalezasDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveFortalezas={handleSaveFortalezas}
+                      fortalezasDateInputRef={fortalezasDateInputRef}
+                      oportunidadesHistorico={(oportunidadesHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      oportunidadesDraft={oportunidadesDraft}
+                      onOportunidadesDraftChange={(field, value) =>
+                        setOportunidadesDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveOportunidades={handleSaveOportunidades}
+                      oportunidadesDateInputRef={oportunidadesDateInputRef}
+                      fraquezasHistorico={(fraquezasHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      fraquezasDraft={fraquezasDraft}
+                      onFraquezasDraftChange={(field, value) =>
+                        setFraquezasDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveFraquezas={handleSaveFraquezas}
+                      fraquezasDateInputRef={fraquezasDateInputRef}
+                      ameacasHistorico={(ameacasHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      ameacasDraft={ameacasDraft}
+                      onAmeacasDraftChange={(field, value) =>
+                        setAmeacasDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveAmeacas={handleSaveAmeacas}
+                      ameacasDateInputRef={ameacasDateInputRef}
+                      renderInfoIcon={renderInfoIcon}
                     />
                   </div>
                 </section>
