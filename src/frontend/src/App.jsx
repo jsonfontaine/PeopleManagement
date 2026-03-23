@@ -434,6 +434,21 @@ function ChaveSection({
   onHabilidadesDraftChange,
   onSaveHabilidades,
   habilidadesDateInputRef,
+  atitudesHistorico,
+  atitudesDraft,
+  onAtitudesDraftChange,
+  onSaveAtitudes,
+  atitudesDateInputRef,
+  valoresHistorico,
+  valoresDraft,
+  onValoresDraftChange,
+  onSaveValores,
+  valoresDateInputRef,
+  expectativasHistorico,
+  expectativasDraft,
+  onExpectativasDraftChange,
+  onSaveExpectativas,
+  expectativasDateInputRef,
   renderInfoIcon
 }) {
   const [activeProperty, setActiveProperty] = useState("conhecimentos");
@@ -458,6 +473,36 @@ function ChaveSection({
       onDraftChange: onHabilidadesDraftChange,
       onSave: onSaveHabilidades,
       dateInputRef: habilidadesDateInputRef
+    },
+    {
+      key: "atitudes",
+      label: "Atitudes",
+      tooltipKey: "atitudes",
+      historico: atitudesHistorico,
+      draft: atitudesDraft,
+      onDraftChange: onAtitudesDraftChange,
+      onSave: onSaveAtitudes,
+      dateInputRef: atitudesDateInputRef
+    },
+    {
+      key: "valores",
+      label: "Valores",
+      tooltipKey: "valores",
+      historico: valoresHistorico,
+      draft: valoresDraft,
+      onDraftChange: onValoresDraftChange,
+      onSave: onSaveValores,
+      dateInputRef: valoresDateInputRef
+    },
+    {
+      key: "expectativas",
+      label: "Expectativas",
+      tooltipKey: "expectativas",
+      historico: expectativasHistorico,
+      draft: expectativasDraft,
+      onDraftChange: onExpectativasDraftChange,
+      onSave: onSaveExpectativas,
+      dateInputRef: expectativasDateInputRef
     }
   ];
 
@@ -592,6 +637,12 @@ function App() {
   const [conhecimentosDraft, setConhecimentosDraft] = useState({ data: "", valor: "" });
   const [habilidadesHistorico, setHabilidadesHistorico] = useState([]);
   const [habilidadesDraft, setHabilidadesDraft] = useState({ data: "", valor: "" });
+  const [atitudesHistorico, setAtitudesHistorico] = useState([]);
+  const [atitudesDraft, setAtitudesDraft] = useState({ data: "", valor: "" });
+  const [valoresHistorico, setValoresHistorico] = useState([]);
+  const [valoresDraft, setValoresDraft] = useState({ data: "", valor: "" });
+  const [expectativasHistorico, setExpectativasHistorico] = useState([]);
+  const [expectativasDraft, setExpectativasDraft] = useState({ data: "", valor: "" });
   
   const [propHistoricaEntries, setPropHistoricaEntries] = useState({});
   const [propDrafts, setPropDrafts] = useState({});
@@ -600,6 +651,9 @@ function App() {
   const classificacaoDataInputRefs = useRef({});
   const conhecimentosDateInputRef = useRef(null);
   const habilidadesDateInputRef = useRef(null);
+  const atitudesDateInputRef = useRef(null);
+  const valoresDateInputRef = useRef(null);
+  const expectativasDateInputRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -697,7 +751,7 @@ function App() {
       setError("");
 
       try {
-        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse, conhecimentosResponse, habilidadesResponse] = await Promise.all([
+        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse, conhecimentosResponse, habilidadesResponse, atitudesResponse, valoresResponse, expectativasResponse] = await Promise.all([
           requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`),
           requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`),
           requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`),
@@ -705,7 +759,10 @@ function App() {
           requestJson(`/api/personalidade/${selectedLideradoId}`),
           requestJson(`/api/nine-box/${selectedLideradoId}`),
           requestJson(`/api/conhecimentos/${selectedLideradoId}`),
-          requestJson(`/api/habilidades/${selectedLideradoId}`)
+          requestJson(`/api/habilidades/${selectedLideradoId}`),
+          requestJson(`/api/atitudes/${selectedLideradoId}`),
+          requestJson(`/api/valores/${selectedLideradoId}`),
+          requestJson(`/api/expectativas/${selectedLideradoId}`)
         ]);
 
         const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
@@ -728,6 +785,9 @@ function App() {
         setNineBoxHistorico(nineBoxResponse?.registros || []);
         setConhecimentosHistorico(conhecimentosResponse?.registros || []);
         setHabilidadesHistorico(habilidadesResponse?.registros || []);
+        setAtitudesHistorico(atitudesResponse?.registros || []);
+        setValoresHistorico(valoresResponse?.registros || []);
+        setExpectativasHistorico(expectativasResponse?.registros || []);
 
         if (isNewLiderado) {
           setCultureIndex(0);
@@ -735,6 +795,9 @@ function App() {
           setPropDrafts({});
           setConhecimentosDraft({ data: "", valor: "" });
           setHabilidadesDraft({ data: "", valor: "" });
+          setAtitudesDraft({ data: "", valor: "" });
+          setValoresDraft({ data: "", valor: "" });
+          setExpectativasDraft({ data: "", valor: "" });
           setActivePropKeys({});
         }
 
@@ -824,14 +887,20 @@ function App() {
         }
 
         if (activeTab === "CHAVE") {
-          const [conhecimentosResponse, habilidadesResponse] = await Promise.all([
+          const [conhecimentosResponse, habilidadesResponse, atitudesResponse, valoresResponse, expectativasResponse] = await Promise.all([
             requestJson(`/api/conhecimentos/${selectedLideradoId}`),
-            requestJson(`/api/habilidades/${selectedLideradoId}`)
+            requestJson(`/api/habilidades/${selectedLideradoId}`),
+            requestJson(`/api/atitudes/${selectedLideradoId}`),
+            requestJson(`/api/valores/${selectedLideradoId}`),
+            requestJson(`/api/expectativas/${selectedLideradoId}`)
           ]);
           if (!active) return;
 
           setConhecimentosHistorico(conhecimentosResponse?.registros || []);
           setHabilidadesHistorico(habilidadesResponse?.registros || []);
+          setAtitudesHistorico(atitudesResponse?.registros || []);
+          setValoresHistorico(valoresResponse?.registros || []);
+          setExpectativasHistorico(expectativasResponse?.registros || []);
           return;
         }
 
@@ -1349,6 +1418,135 @@ function App() {
 
       requestAnimationFrame(() => {
         habilidadesDateInputRef.current?.focus();
+      });
+
+      setError("");
+      await refreshCurrentLeader();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleSaveAtitudes() {
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const draft = atitudesDraft || { data: "", valor: "" };
+    const isoDate = toIsoDate(draft.data);
+    if (!isoDate) {
+      setError("Informe a data de Atitudes no formato dd/MM/aaaa (ex.: 27/11/2025).");
+      return;
+    }
+
+    if (!draft.valor?.trim()) {
+      setError("O valor e obrigatorio.");
+      return;
+    }
+
+    try {
+      await requestJson(`/api/atitudes`, {
+        method: "POST",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          valor: draft.valor.trim(),
+          data: isoDate
+        })
+      });
+
+      const response = await requestJson(`/api/atitudes/${selectedLideradoId}`);
+      setAtitudesHistorico(response?.registros || []);
+      setAtitudesDraft({ data: "", valor: "" });
+
+      requestAnimationFrame(() => {
+        atitudesDateInputRef.current?.focus();
+      });
+
+      setError("");
+      await refreshCurrentLeader();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleSaveValores() {
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const draft = valoresDraft || { data: "", valor: "" };
+    const isoDate = toIsoDate(draft.data);
+    if (!isoDate) {
+      setError("Informe a data de Valores no formato dd/MM/aaaa (ex.: 27/11/2025).");
+      return;
+    }
+
+    if (!draft.valor?.trim()) {
+      setError("O valor e obrigatorio.");
+      return;
+    }
+
+    try {
+      await requestJson(`/api/valores`, {
+        method: "POST",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          valor: draft.valor.trim(),
+          data: isoDate
+        })
+      });
+
+      const response = await requestJson(`/api/valores/${selectedLideradoId}`);
+      setValoresHistorico(response?.registros || []);
+      setValoresDraft({ data: "", valor: "" });
+
+      requestAnimationFrame(() => {
+        valoresDateInputRef.current?.focus();
+      });
+
+      setError("");
+      await refreshCurrentLeader();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleSaveExpectativas() {
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const draft = expectativasDraft || { data: "", valor: "" };
+    const isoDate = toIsoDate(draft.data);
+    if (!isoDate) {
+      setError("Informe a data de Expectativas no formato dd/MM/aaaa (ex.: 27/11/2025).");
+      return;
+    }
+
+    if (!draft.valor?.trim()) {
+      setError("O valor e obrigatorio.");
+      return;
+    }
+
+    try {
+      await requestJson(`/api/expectativas`, {
+        method: "POST",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          valor: draft.valor.trim(),
+          data: isoDate
+        })
+      });
+
+      const response = await requestJson(`/api/expectativas/${selectedLideradoId}`);
+      setExpectativasHistorico(response?.registros || []);
+      setExpectativasDraft({ data: "", valor: "" });
+
+      requestAnimationFrame(() => {
+        expectativasDateInputRef.current?.focus();
       });
 
       setError("");
@@ -2002,6 +2200,45 @@ function App() {
                       }
                       onSaveHabilidades={handleSaveHabilidades}
                       habilidadesDateInputRef={habilidadesDateInputRef}
+                      atitudesHistorico={(atitudesHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      atitudesDraft={atitudesDraft}
+                      onAtitudesDraftChange={(field, value) =>
+                        setAtitudesDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveAtitudes={handleSaveAtitudes}
+                      atitudesDateInputRef={atitudesDateInputRef}
+                      valoresHistorico={(valoresHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      valoresDraft={valoresDraft}
+                      onValoresDraftChange={(field, value) =>
+                        setValoresDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveValores={handleSaveValores}
+                      valoresDateInputRef={valoresDateInputRef}
+                      expectativasHistorico={(expectativasHistorico || []).map((r) => ({
+                        data: toDisplayDate(r.data),
+                        valor: r.valor
+                      }))}
+                      expectativasDraft={expectativasDraft}
+                      onExpectativasDraftChange={(field, value) =>
+                        setExpectativasDraft((prev) => ({
+                          ...prev,
+                          [field]: value
+                        }))
+                      }
+                      onSaveExpectativas={handleSaveExpectativas}
+                      expectativasDateInputRef={expectativasDateInputRef}
                       renderInfoIcon={renderInfoIcon}
                     />
                   </div>

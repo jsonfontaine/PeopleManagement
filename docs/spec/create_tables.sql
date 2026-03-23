@@ -112,4 +112,31 @@ CREATE TABLE Habilidade (
     FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
+-- Historico individual de Atitudes
+CREATE TABLE Atitude (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+-- Historico individual de Valores
+CREATE TABLE Valor (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+-- Historico individual de Expectativas
+CREATE TABLE Expectativa (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
 

@@ -19,6 +19,9 @@ public sealed class PeopleManagementDbContext : DbContext
     public DbSet<DiscEntity> Discs => Set<DiscEntity>();
     public DbSet<ConhecimentoEntity> Conhecimentos => Set<ConhecimentoEntity>();
     public DbSet<HabilidadeEntity> Habilidades => Set<HabilidadeEntity>();
+    public DbSet<AtitudeEntity> Atitudes => Set<AtitudeEntity>();
+    public DbSet<ValorEntity> Valores => Set<ValorEntity>();
+    public DbSet<ExpectativaEntity> Expectativas => Set<ExpectativaEntity>();
     public DbSet<PersonalidadeEntity> Personalidades => Set<PersonalidadeEntity>();
     public DbSet<NineBoxEntity> NineBoxes => Set<NineBoxEntity>();
 
@@ -100,6 +103,33 @@ public sealed class PeopleManagementDbContext : DbContext
         modelBuilder.Entity<HabilidadeEntity>(builder =>
         {
             builder.ToTable("Habilidade");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<AtitudeEntity>(builder =>
+        {
+            builder.ToTable("Atitude");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<ValorEntity>(builder =>
+        {
+            builder.ToTable("Valor");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<ExpectativaEntity>(builder =>
+        {
+            builder.ToTable("Expectativa");
             builder.HasKey(x => new { x.IdLiderado, x.Data });
             builder.Property(x => x.IdLiderado).IsRequired();
             builder.Property(x => x.Valor).IsRequired();
