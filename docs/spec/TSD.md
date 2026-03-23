@@ -50,15 +50,15 @@ Por favor, revise a tabela acima e confirme se os serviços de aplicação estã
 
 
 - (Os campos Nome, Data de Nascimento, Estado Civil, Quantidade de Filhos, Data de Contratação, Cargo, Data de Início no Cargo, Aspiração, Gostos Pessoais, BIO e Red Flags são propriedades simples da entidade Liderado e não possuem histórico.)
-- **Conhecimento**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Habilidade**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Atitude**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Valor**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Expectativa**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Metas**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Situacao Atual**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Opcoes**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
-- **Proximos Passos**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
+- **Conhecimento**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Habilidade**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Atitude**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Valor**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Expectativa**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Metas**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Situacao Atual**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Opcoes**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
+- **Proximos Passos**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado na tabela `PropriedadesHistoricas`, identificado por `Tipo`)
 - **DISC**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
 - **Personalidade**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
 - **NineBox**: { idLiderado: string, valor: string, data: date } (Value Object individual, gravado em tabela própria)
@@ -76,7 +76,9 @@ Por favor, revise a tabela acima e confirme se os serviços de aplicação estã
 - **Feedback**: { idLiderado: string, conteudo: string, polaridade: string, receptividade: string, data: date }
 - **1:1**: { idLiderado: string, resumo: string, tarefas: string, proximos_assuntos: string, data: date }
 
-Cada propriedade histórica do Liderado é representada por um Value Object. Apenas `1:1`, `Feedbacks` e `Cultura` são Value Objects compostos, gravados juntos, com obrigatoriedade de preenchimento conjunto e tabela própria. Todos os outros Value Objects individuais (DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças) também possuem tabela própria e podem ser gravados individualmente, sem obrigatoriedade de preenchimento conjunto.
+Cada propriedade histórica do Liderado é representada por um Value Object. Apenas `1:1`, `Feedbacks` e `Cultura` são Value Objects compostos, gravados juntos, com obrigatoriedade de preenchimento conjunto e tabela própria. No schema implementado, `DISC`, `Personalidade` e `Nine Box` possuem tabelas dedicadas; os demais Value Objects individuais (`Conhecimentos`, `Habilidades`, `Atitudes`, `Valores`, `Expectativas`, `Metas`, `Situação Atual`, `Opções`, `Próximos Passos`, `Fortalezas`, `Oportunidades`, `Fraquezas`, `Ameaças`) são armazenados em `PropriedadesHistoricas`, diferenciados por `Tipo`.
+
+`Classificação de Perfil` é somente um agrupador de UI. O backend não mantém tabela agregada para essa seção: os dados são lidos das tabelas históricas individuais (`DISC`, `Personalidade` e `NineBox`).
 
 
 ### Agregados
@@ -205,7 +207,9 @@ A modelagem de dados segue o domínio definido nas etapas anteriores, refletindo
   - IdLiderado: GUID (FK)
   - Valor: string
   - Data: date
-  - Cada Value Object individual possui sua própria tabela no banco de dados.
+  - `DISC`, `Personalidade` e `NineBox` possuem tabelas próprias.
+  - Os demais Value Objects individuais são persistidos na tabela `PropriedadesHistoricas`, identificados por `Tipo`.
+  - Não existe tabela agregada `ClassificacoesPerfil`.
 
 - **CulturaGenial**
   - IdLiderado: GUID (FK)
@@ -266,7 +270,7 @@ erDiagram
 
 ### Observações
 - Todos os históricos são vinculados ao Liderado por IdLiderado.
-- Apenas `1:1`, `Feedbacks` e `Cultura` são gravados como Value Objects compostos, com obrigatoriedade de preenchimento conjunto e tabela própria. Todos os outros Value Objects individuais (DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças) também possuem tabela própria e podem ser gravados individualmente.
+- Apenas `1:1`, `Feedbacks` e `Cultura` são gravados como Value Objects compostos, com obrigatoriedade de preenchimento conjunto e tabela própria. No schema implementado, `DISC`, `Personalidade` e `Nine Box` possuem tabela própria; os demais Value Objects individuais de `CHAVE`, `GROW / PDI` e `SWOT` são gravados em `PropriedadesHistoricas`.
 - Propriedade serve como metadado para campos dinâmicos e tooltips.
 - Tipos de dados podem ser ajustados conforme necessidade do ORM/EF Core.
 - O modelo físico pode ser refinado durante a implementação, mantendo rastreabilidade e performance.

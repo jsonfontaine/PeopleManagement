@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using PeopleManagement.Application.Features.Dashboard;
 using PeopleManagement.Application.Features.Disc;
 using PeopleManagement.Application.Features.Liderados;
+using PeopleManagement.Application.Features.NineBox;
+using PeopleManagement.Application.Features.Personalidade;
 using PeopleManagement.Application.Features.PropHistorica;
 using PeopleManagement.Application.Features.Tooltips;
 
@@ -16,6 +18,12 @@ public static class ApplicationServiceCollectionExtensions
 
         services.AddScoped<DiscService>();
         services.AddScoped<IDiscRepository, DiscRepository>();
+
+        services.AddScoped<PersonalidadeService>();
+        services.AddScoped<IPersonalidadeRepository, PersonalidadeRepository>();
+
+        services.AddScoped<NineBoxService>();
+        services.AddScoped<INineBoxRepository, NineBoxRepository>();
 
         services.AddScoped<LideradosService>();
         services.AddScoped<ILideradosRepository, LideradosRepository>();

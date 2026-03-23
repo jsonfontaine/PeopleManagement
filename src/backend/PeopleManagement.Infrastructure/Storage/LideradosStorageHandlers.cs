@@ -79,15 +79,17 @@ public sealed class RemoverLideradoComDependenciasHandler : IStorageCommandHandl
         var informacoesPessoais = await _dbContext.InformacoesPessoais.Where(x => x.LideradoId.ToLower() == idStr).ToListAsync(cancellationToken);
         var feedbacks = await _dbContext.Feedbacks.Where(x => x.LideradoId.ToLower() == idStr).ToListAsync(cancellationToken);
         var oneOnOnes = await _dbContext.OneOnOnes.Where(x => x.LideradoId.ToLower() == idStr).ToListAsync(cancellationToken);
-        var classificacoesPerfil = await _dbContext.ClassificacoesPerfil.Where(x => x.LideradoId.ToLower() == idStr).ToListAsync(cancellationToken);
         var discs = await _dbContext.Discs.Where(x => x.IdLiderado.ToLower() == idStr).ToListAsync(cancellationToken);
+        var personalidades = await _dbContext.Personalidades.Where(x => x.IdLiderado.ToLower() == idStr).ToListAsync(cancellationToken);
+        var nineBoxes = await _dbContext.NineBoxes.Where(x => x.IdLiderado.ToLower() == idStr).ToListAsync(cancellationToken);
         var culturas = await _dbContext.CulturaAvaliacoes.Where(x => x.LideradoId == command.Id).ToListAsync(cancellationToken);
         var propriedades = await _dbContext.PropriedadesHistoricas.Where(x => x.IdLiderado.ToLower() == idStr).ToListAsync(cancellationToken);
         _dbContext.InformacoesPessoais.RemoveRange(informacoesPessoais);
         _dbContext.Feedbacks.RemoveRange(feedbacks);
         _dbContext.OneOnOnes.RemoveRange(oneOnOnes);
-        _dbContext.ClassificacoesPerfil.RemoveRange(classificacoesPerfil);
         _dbContext.Discs.RemoveRange(discs);
+        _dbContext.Personalidades.RemoveRange(personalidades);
+        _dbContext.NineBoxes.RemoveRange(nineBoxes);
         _dbContext.CulturaAvaliacoes.RemoveRange(culturas);
         _dbContext.PropriedadesHistoricas.RemoveRange(propriedades);
         _dbContext.Liderados.Remove(liderado);
@@ -131,9 +133,20 @@ public sealed class ObterVisaoIndividualHandler : IStorageCommandHandler<ObterVi
             : new InformacoesPessoais(informacoesEntity.Nome, informacoesEntity.DataNascimento, informacoesEntity.EstadoCivil, informacoesEntity.QuantidadeFilhos, informacoesEntity.DataContratacao, informacoesEntity.Cargo, informacoesEntity.DataInicioCargo, informacoesEntity.AspiracaoCarreira, informacoesEntity.GostosPessoais, informacoesEntity.RedFlags, informacoesEntity.Bio);
         var feedbacksCount = await _dbContext.Feedbacks.AsNoTracking().CountAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
         var oneOnOnesCount = await _dbContext.OneOnOnes.AsNoTracking().CountAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
-        var classificacaoPerfil = await _dbContext.ClassificacoesPerfil.AsNoTracking().FirstOrDefaultAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
+        var perfilAtual = await _dbContext.Personalidades
+            .AsNoTracking()
+            .Where(x => x.IdLiderado.ToLower() == idStr)
+            .OrderByDescending(x => x.Data)
+            .Select(x => x.Valor)
+            .FirstOrDefaultAsync(cancellationToken);
+        var nineBoxAtual = await _dbContext.NineBoxes
+            .AsNoTracking()
+            .Where(x => x.IdLiderado.ToLower() == idStr)
+            .OrderByDescending(x => x.Data)
+            .Select(x => x.Valor)
+            .FirstOrDefaultAsync(cancellationToken);
         var datasAvaliacaoCultura = await _dbContext.CulturaAvaliacoes.AsNoTracking().Where(x => x.LideradoId == command.Id).OrderByDescending(x => x.Data).Select(x => x.Data).ToArrayAsync(cancellationToken);
-        var visao = new VisaoIndividualProjection(command.Id, informacoes, classificacaoPerfil?.Perfil, classificacaoPerfil?.NineBox, feedbacksCount, oneOnOnesCount, datasAvaliacaoCultura);
+        var visao = new VisaoIndividualProjection(command.Id, informacoes, perfilAtual, nineBoxAtual, feedbacksCount, oneOnOnesCount, datasAvaliacaoCultura);
         return new ObterVisaoIndividualResponse(visao);
     }
 }
@@ -247,24 +260,5 @@ public sealed class AtualizarInformacoesPessoaisHandler : IStorageCommandHandler
     }
 }
 
-public sealed class AtualizarClassificacaoPerfilHandler : IStorageCommandHandler<AtualizarClassificacaoPerfilCommand, StorageUnit>
-{
-    private readonly PeopleManagementDbContext _dbContext;
-    public AtualizarClassificacaoPerfilHandler(PeopleManagementDbContext dbContext) => _dbContext = dbContext;
-    public async Task<StorageUnit> HandleAsync(AtualizarClassificacaoPerfilCommand command, CancellationToken cancellationToken)
-    {
-        var idStr = command.Id.ToString().ToLowerInvariant();
-        var classificacao = await _dbContext.ClassificacoesPerfil.FirstOrDefaultAsync(x => x.LideradoId.ToLower() == idStr, cancellationToken);
-        if (classificacao is null)
-        {
-            classificacao = new ClassificacaoPerfilEntity { LideradoId = idStr };
-            _dbContext.ClassificacoesPerfil.Add(classificacao);
-        }
-        classificacao.Perfil = command.Perfil;
-        classificacao.NineBox = command.NineBox;
-        classificacao.DataAtualizacaoUtc = command.Data.ToDateTime(TimeOnly.MinValue);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return new StorageUnit();
-    }
-}
+
 

@@ -1,24 +1,3 @@
-// Converte yyyy-MM-dd para dd/MM/yyyy
-function toPtBrDate(value) {
-  if (!value) return "";
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const [year, month, day] = value.split("-");
-    return `${day}/${month}/${year}`;
-  }
-  return value;
-}
-
-// Converte dd/MM/yyyy para yyyy-MM-dd
-function ptBrToIsoDate(value) {
-  if (!value) return "";
-  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (match) {
-    const [, day, month, year] = match;
-    return `${year}-${month}-${day}`;
-  }
-  return value;
-}
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const TAB_ORDER = [
@@ -150,6 +129,7 @@ async function requestJson(path, options) {
     headers: {
       "Content-Type": "application/json"
     },
+    cache: "no-store",
     ...options
   });
 
@@ -228,7 +208,7 @@ function RadarChart({ values, id, className }) {
   );
 }
 
-function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM/yyyy", ariaLabel }) {
+function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM/yyyy", ariaLabel, inputRef }) {
   const [internalValue, setInternalValue] = useState("");
   const isControlled = value !== undefined;
   const currentValue = isControlled ? toDisplayDate(value) : internalValue;
@@ -242,6 +222,7 @@ function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM
 
   return (
     <input
+      ref={inputRef}
       type="text"
       inputMode="numeric"
       maxLength={10}
@@ -251,7 +232,6 @@ function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM
       value={currentValue}
       onChange={(event) => {
         const masked = formatDateDigitsToMask(event.target.value);
-        console.log('[DEBUG] MaskedDateInput onChange:', event.target.value, 'masked:', masked);
         if (isControlled) {
           onChange?.(masked);
           return;
@@ -262,16 +242,27 @@ function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM
   );
 }
 
-function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil, propDrafts, onPropDraftChange, onActiveKeyChange }) {
+function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil, propDrafts, onPropDraftChange, onActiveKeyChange, activePropertyKey, dateInputRef }) {
   const [activePropertyIndex, setActivePropertyIndex] = useState(0);
 
   useEffect(() => {
-    setActivePropertyIndex(0);
-    if (onActiveKeyChange && groups.length > 0) {
-      onActiveKeyChange(groups[0].tooltipKey);
+    if (groups.length === 0) {
+      setActivePropertyIndex(0);
+      return;
+    }
+
+    const indexByKey = activePropertyKey
+      ? groups.findIndex((group) => group.tooltipKey === activePropertyKey)
+      : -1;
+
+    const nextIndex = indexByKey >= 0 ? indexByKey : 0;
+    setActivePropertyIndex(nextIndex);
+
+    if (onActiveKeyChange && indexByKey < 0) {
+      onActiveKeyChange(groups[nextIndex].tooltipKey);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups]);
+  }, [groups, activePropertyKey]);
 
   function handleTabClick(index) {
     setActivePropertyIndex(index);
@@ -316,6 +307,7 @@ function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft,
                         className="date-input"
                         ariaLabel={`Data do registro de ${group.label}`}
                         value={classificacaoPerfilDraft.dataDisc || ""}
+                        inputRef={index === activePropertyIndex ? dateInputRef : undefined}
                         onChange={(nextValue) =>
                           setClassificacaoPerfilDraft((d) => ({ ...d, dataDisc: nextValue }))
                         }
@@ -422,10 +414,13 @@ function App() {
   });
 
   const [discHistorico, setDiscHistorico] = useState([]);
+  const [personalidadeHistorico, setPersonalidadeHistorico] = useState([]);
+  const [nineBoxHistorico, setNineBoxHistorico] = useState([]);
   const [propHistoricaEntries, setPropHistoricaEntries] = useState({});
   const [propDrafts, setPropDrafts] = useState({});
   const [activePropKeys, setActivePropKeys] = useState({});
   const prevLideradoIdRef = useRef(null);
+  const classificacaoDataInputRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -470,6 +465,45 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (view !== "dashboard") {
+      return;
+    }
+
+    let active = true;
+    async function loadDashboardFresh() {
+      try {
+        const [dashboard, lideradosList] = await Promise.all([
+          requestJson("/api/dashboard/"),
+          requestJson("/api/liderados/")
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setDashboardCards(dashboard?.cards || []);
+        setLiderados(lideradosList || []);
+      } catch {
+        // noop: keeps current data and avoids noisy errors when toggling views quickly
+      }
+    }
+
+    loadDashboardFresh();
+    return () => {
+      active = false;
+    };
+  }, [view]);
+
+  useEffect(() => {
+    if (view !== "leader" || !selectedLideradoId) {
+      return;
+    }
+
+    // Always refresh when entering the leader page to avoid stale historical tables.
+    setLeaderReloadKey((value) => value + 1);
+  }, [view, selectedLideradoId]);
+
+  useEffect(() => {
     if (!selectedLideradoId) {
       return;
     }
@@ -484,11 +518,13 @@ function App() {
       setError("");
 
       try {
-        const [visao, feedbackResponse, oneOnOneResponse, discResponse] = await Promise.all([
+        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse] = await Promise.all([
           requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`),
           requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`),
           requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`),
-          requestJson(`/api/disc/${selectedLideradoId}`)
+          requestJson(`/api/disc/${selectedLideradoId}`),
+          requestJson(`/api/personalidade/${selectedLideradoId}`),
+          requestJson(`/api/nine-box/${selectedLideradoId}`)
         ]);
 
         const propTypes = ["conhecimentos", "habilidades", "atitudes", "valores", "expectativas",
@@ -519,6 +555,8 @@ function App() {
         setOneOnOnes(oneOnOneResponse?.registros || []);
         setCultureEntries(nextCultureEntries);
         setDiscHistorico(discResponse?.registros || []);
+        setPersonalidadeHistorico(personalidadeResponse?.registros || []);
+        setNineBoxHistorico(nineBoxResponse?.registros || []);
         setPropHistoricaEntries(nextPropEntries);
 
         if (isNewLiderado) {
@@ -549,8 +587,9 @@ function App() {
         const classificacao = visao?.conteudo?.classificacaoPerfil || visao?.conteudo || {};
         setClassificacaoPerfilDraft({
           disc: classificacao.disc || "",
-          personalidade: classificacao.perfil || classificacao.personalidade || "",
-          nineBox: classificacao.nineBox || "",
+          // Personalidade/Nine Box are independent VOs and should be typed explicitly per save.
+          personalidade: "",
+          nineBox: "",
           dataDisc: toDisplayDate(classificacao.dataDisc || classificacao.Data || classificacao.dataAtualizacaoUtc || "")
         });
       } catch (loadError) {
@@ -569,6 +608,112 @@ function App() {
       active = false;
     };
   }, [selectedLideradoId, leaderReloadKey]);
+
+  useEffect(() => {
+    if (view !== "leader" || !selectedLideradoId) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadActiveTabData() {
+      try {
+        if (activeTab === "Informacoes Pessoais") {
+          const visao = await requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`);
+          if (!active) return;
+
+          setLeaderView(visao?.conteudo || null);
+          const informacoes = visao?.conteudo?.informacoesPessoais;
+          setPersonalForm({
+            nome: informacoes?.nome || "",
+            dataNascimento: toDisplayDate(informacoes?.dataNascimento),
+            estadoCivil: informacoes?.estadoCivil || "",
+            quantidadeFilhos: informacoes?.quantidadeFilhos ?? "",
+            dataContratacao: toDisplayDate(informacoes?.dataContratacao),
+            cargo: informacoes?.cargo || "",
+            dataInicioCargo: toDisplayDate(informacoes?.dataInicioCargo),
+            aspiracaoCarreira: informacoes?.aspiracaoCarreira || "",
+            gostosPessoais: informacoes?.gostosPessoais || "",
+            redFlags: informacoes?.redFlags || "",
+            bio: informacoes?.bio || ""
+          });
+          return;
+        }
+
+        if (activeTab === "Classificacao de Perfil") {
+          const [discResponse, personalidadeResponse, nineBoxResponse] = await Promise.all([
+            requestJson(`/api/disc/${selectedLideradoId}`),
+            requestJson(`/api/personalidade/${selectedLideradoId}`),
+            requestJson(`/api/nine-box/${selectedLideradoId}`)
+          ]);
+          if (!active) return;
+
+          setDiscHistorico(discResponse?.registros || []);
+          setPersonalidadeHistorico(personalidadeResponse?.registros || []);
+          setNineBoxHistorico(nineBoxResponse?.registros || []);
+          return;
+        }
+
+        if (activeTab === "Feedbacks") {
+          const feedbackResponse = await requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`);
+          if (!active) return;
+          setFeedbacks(feedbackResponse?.registros || []);
+          return;
+        }
+
+        if (activeTab === "1:1") {
+          const oneOnOneResponse = await requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`);
+          if (!active) return;
+          setOneOnOnes(oneOnOneResponse?.registros || []);
+          return;
+        }
+
+        if (activeTab === "Cultura") {
+          const visao = await requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`);
+          const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
+          const radarResponses = await Promise.all(
+            datas.map((data) => requestJson(`/api/liderados/${selectedLideradoId}/cultura/radar?data=${data}`))
+          );
+          if (!active) return;
+
+          setLeaderView(visao?.conteudo || null);
+          setCultureEntries(radarResponses.map((item) => item.radar).filter(Boolean));
+          return;
+        }
+
+        const tabToTypes = {
+          CHAVE: ["conhecimentos", "habilidades", "atitudes", "valores", "expectativas"],
+          "GROW / PDI": ["metas", "situacaoAtual", "opcoes", "proximosPassos"],
+          SWOT: ["fortalezas", "oportunidades", "fraquezas", "ameacas"]
+        };
+
+        const types = tabToTypes[activeTab];
+        if (types?.length) {
+          const responses = await Promise.all(
+            types.map((tipo) => requestJson(`/api/liderados/${selectedLideradoId}/propriedades/${tipo}`))
+          );
+          if (!active) return;
+
+          setPropHistoricaEntries((prev) => {
+            const next = { ...prev };
+            types.forEach((tipo, idx) => {
+              next[tipo] = responses[idx]?.registros || [];
+            });
+            return next;
+          });
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(loadError.message);
+        }
+      }
+    }
+
+    loadActiveTabData();
+    return () => {
+      active = false;
+    };
+  }, [view, activeTab, selectedLideradoId]);
 
   useEffect(() => {
     const target = cultureEntries[cultureIndex] || null;
@@ -644,17 +789,13 @@ function App() {
 
   const propertySectionData = useMemo(() => {
     const buildRows = (sectionName, propertyKey) => {
-      if (sectionName === "Classificacao de Perfil" && propertyKey === "disc") {
-        return discHistorico.map((r) => ({
-          data: toDisplayDate(r.data),
-          valor: r.valor
-        }));
+      if (sectionName === "Classificacao de Perfil") {
+        if (propertyKey === "disc") return discHistorico.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
+        if (propertyKey === "personalidade") return personalidadeHistorico.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
+        if (propertyKey === "nineBox") return nineBoxHistorico.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
       }
       const entries = propHistoricaEntries[propertyKey] || [];
-      return entries.map(r => ({
-        data: toDisplayDate(r.data),
-        valor: r.valor
-      }));
+      return entries.map(r => ({ data: toDisplayDate(r.data), valor: r.valor }));
     };
     return Object.fromEntries(
       Object.keys(PROPERTY_SECTION_CONFIG).map((sectionName) => [
@@ -665,7 +806,7 @@ function App() {
         }))
       ])
     );
-  }, [discHistorico, propHistoricaEntries]);
+  }, [discHistorico, personalidadeHistorico, nineBoxHistorico, propHistoricaEntries]);
 
   const dashboardCardsWithFallbackRadar = useMemo(() => {
     return dashboardCards.map((card) => {
@@ -873,65 +1014,75 @@ function App() {
       return;
     }
     const dataDiscTexto = String(classificacaoPerfilDraft.dataDisc || "").trim();
-    const dataDiscIso = toIsoDate(dataDiscTexto);
-    if (!dataDiscIso) {
-      setError(buildDiscDateErrorMessage(dataDiscTexto));
-      return;
-    }
-    try {
-      await requestJson(`/api/liderados/${selectedLideradoId}/classificacao-perfil`, {
-        method: "PUT",
-        body: JSON.stringify({
-          perfil: classificacaoPerfilDraft.personalidade,
-          nineBox: classificacaoPerfilDraft.nineBox,
-          data: dataDiscIso
-        })
-      });
-
-      await requestJson(`/api/disc`, {
-        method: "POST",
-        body: JSON.stringify({
-          lideradoId: selectedLideradoId,
-          disc: classificacaoPerfilDraft.disc,
-          data: dataDiscTexto
-        })
-      });
-
-      // Refresh disc history immediately after save
-      const discResponse = await requestJson(`/api/disc/${selectedLideradoId}`);
-      setDiscHistorico(discResponse?.registros || []);
-
-      // Also refresh dashboard summary metrics without resetting the tab
-      await refreshCurrentLeader();
-
-      setError("");
-    } catch (e) {
-      setError(e.message);
-    }
-  }
-
-  async function handleSaveDisc() {
-    setError("");
-    if (!selectedLideradoId) {
-      setError("Nenhum liderado selecionado.");
-      return;
-    }
-    const dataDiscTexto = String(classificacaoPerfilDraft.dataDisc || "").trim();
     if (!toIsoDate(dataDiscTexto)) {
       setError(buildDiscDateErrorMessage(dataDiscTexto));
       return;
     }
     try {
-      await requestJson(`/api/disc`, {
-        method: "POST",
-        body: JSON.stringify({
-          lideradoId: selectedLideradoId,
-          disc: classificacaoPerfilDraft.disc,
-          data: dataDiscTexto
-        })
+      const activeKey = activePropKeys["Classificacao de Perfil"] || "disc";
+      const valueByKey = {
+        disc: classificacaoPerfilDraft.disc,
+        personalidade: classificacaoPerfilDraft.personalidade,
+        nineBox: classificacaoPerfilDraft.nineBox
+      };
+
+      const valueToSave = String(valueByKey[activeKey] || "").trim();
+      if (!valueToSave) {
+        const labelByKey = {
+          disc: "DISC",
+          personalidade: "Personalidade",
+          nineBox: "Nine Box"
+        };
+        setError(`Preencha o campo ${labelByKey[activeKey]} antes de salvar.`);
+        return;
+      }
+
+      if (activeKey === "disc") {
+        await requestJson(`/api/disc`, {
+          method: "POST",
+          body: JSON.stringify({
+            lideradoId: selectedLideradoId,
+            disc: valueToSave,
+            data: dataDiscTexto
+          })
+        });
+        const discResponse = await requestJson(`/api/disc/${selectedLideradoId}`);
+        setDiscHistorico(discResponse?.registros || []);
+        setClassificacaoPerfilDraft((draft) => ({ ...draft, disc: "" }));
+      } else if (activeKey === "personalidade") {
+        await requestJson(`/api/personalidade`, {
+          method: "POST",
+          body: JSON.stringify({
+            lideradoId: selectedLideradoId,
+            valor: valueToSave,
+            data: dataDiscTexto
+          })
+        });
+        const personalidadeResponse = await requestJson(`/api/personalidade/${selectedLideradoId}`);
+        setPersonalidadeHistorico(personalidadeResponse?.registros || []);
+        setClassificacaoPerfilDraft((draft) => ({ ...draft, personalidade: "" }));
+      } else if (activeKey === "nineBox") {
+        await requestJson(`/api/nine-box`, {
+          method: "POST",
+          body: JSON.stringify({
+            lideradoId: selectedLideradoId,
+            valor: valueToSave,
+            data: dataDiscTexto
+          })
+        });
+        const nineBoxResponse = await requestJson(`/api/nine-box/${selectedLideradoId}`);
+        setNineBoxHistorico(nineBoxResponse?.registros || []);
+        setClassificacaoPerfilDraft((draft) => ({ ...draft, nineBox: "" }));
+      }
+
+      requestAnimationFrame(() => {
+        classificacaoDataInputRef.current?.focus();
       });
+
+      setLeaderReloadKey((value) => value + 1);
+      await refreshCurrentLeader();
+
       setError("");
-      setLeaderReloadKey((k) => k + 1);
     } catch (e) {
       setError(e.message);
     }
@@ -1547,17 +1698,24 @@ function App() {
                     <PropertyTabsSection
                       groups={propertySectionData[activeTab] || []}
                       renderInfoIcon={renderInfoIcon}
+                      activePropertyKey={activePropKeys[activeTab]}
+                      onActiveKeyChange={(key) =>
+                        setActivePropKeys(prev => ({ ...prev, [activeTab]: key }))
+                      }
                       {...(activeTab === "Classificacao de Perfil"
-                        ? { classificacaoPerfilDraft, setClassificacaoPerfilDraft, isClassificacaoPerfil: true }
+                        ? {
+                            classificacaoPerfilDraft,
+                            setClassificacaoPerfilDraft,
+                            isClassificacaoPerfil: true,
+                            dateInputRef: classificacaoDataInputRef
+                          }
                         : {
                             propDrafts,
                             onPropDraftChange: (tipo, field, value) =>
                               setPropDrafts(prev => ({
                                 ...prev,
                                 [tipo]: { ...(prev[tipo] || { data: "", valor: "" }), [field]: value }
-                              })),
-                            onActiveKeyChange: (key) =>
-                              setActivePropKeys(prev => ({ ...prev, [activeTab]: key }))
+                              }))
                           }
                       )}
                     />

@@ -14,10 +14,11 @@ public sealed class PeopleManagementDbContext : DbContext
     public DbSet<InformacoesPessoaisEntity> InformacoesPessoais => Set<InformacoesPessoaisEntity>();
     public DbSet<FeedbackEntity> Feedbacks => Set<FeedbackEntity>();
     public DbSet<OneOnOneEntity> OneOnOnes => Set<OneOnOneEntity>();
-    public DbSet<ClassificacaoPerfilEntity> ClassificacoesPerfil => Set<ClassificacaoPerfilEntity>();
     public DbSet<CulturaAvaliacaoEntity> CulturaAvaliacoes => Set<CulturaAvaliacaoEntity>();
     public DbSet<TooltipEntity> Tooltips => Set<TooltipEntity>();
     public DbSet<DiscEntity> Discs => Set<DiscEntity>();
+    public DbSet<PersonalidadeEntity> Personalidades => Set<PersonalidadeEntity>();
+    public DbSet<NineBoxEntity> NineBoxes => Set<NineBoxEntity>();
     public DbSet<PropriedadeHistoricaEntity> PropriedadesHistoricas => Set<PropriedadeHistoricaEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -62,14 +63,6 @@ public sealed class PeopleManagementDbContext : DbContext
             builder.HasIndex(x => new { x.LideradoId, x.Data });
         });
 
-        modelBuilder.Entity<ClassificacaoPerfilEntity>(builder =>
-        {
-            builder.ToTable("ClassificacoesPerfil");
-            builder.HasKey(x => x.LideradoId);
-            builder.Property(x => x.Perfil).IsRequired().HasMaxLength(100);
-            builder.Property(x => x.NineBox).IsRequired().HasMaxLength(100);
-            builder.Property(x => x.DataAtualizacaoUtc).IsRequired();
-        });
 
         modelBuilder.Entity<CulturaAvaliacaoEntity>(builder =>
         {
@@ -88,6 +81,24 @@ public sealed class PeopleManagementDbContext : DbContext
         modelBuilder.Entity<DiscEntity>(builder =>
         {
             builder.ToTable("Disc");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<PersonalidadeEntity>(builder =>
+        {
+            builder.ToTable("Personalidade");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
+            builder.Property(x => x.Valor).IsRequired();
+            builder.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<NineBoxEntity>(builder =>
+        {
+            builder.ToTable("NineBox");
             builder.HasKey(x => new { x.IdLiderado, x.Data });
             builder.Property(x => x.IdLiderado).IsRequired();
             builder.Property(x => x.Valor).IsRequired();

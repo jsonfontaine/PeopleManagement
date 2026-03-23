@@ -20,32 +20,6 @@ namespace PeopleManagement.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.12");
 
-            modelBuilder.Entity("PeopleManagement.Infrastructure.Persistence.Entities.ClassificacaoPerfilEntity", b =>
-                {
-                    b.Property<Guid>("LideradoId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("DataAtualizacaoUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Disc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NineBox")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Perfil")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("LideradoId");
-
-                    b.ToTable("ClassificacoesPerfil", (string)null);
-                });
 
             modelBuilder.Entity("PeopleManagement.Infrastructure.Persistence.Entities.CulturaAvaliacaoEntity", b =>
                 {

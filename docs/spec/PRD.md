@@ -20,7 +20,8 @@ Você, como gerente de tecnologia, faz a gestão funcional e o acompanhamento de
 - Na visão individual, o painel de resumo lateral exibe o nome do liderado como cabeçalho
 - Navegação estilo "caminho" (breadcrumb) no topo da área de conteúdo: `Dashboard | [combobox de liderados]`; o combobox permite trocar de liderado sem retornar ao dashboard
 - Seções `1:1`, `Feedbacks` e `Cultura` são Value Objects compostos, gravados juntos, cada um com sua própria tabela e regras de obrigatoriedade de preenchimento dos campos principais.
-- Seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` possuem histórico por Value Object individual (ex: DISC, Personalidade, Nine Box, Conhecimentos, Habilidades, Atitudes, Valores, Expectativas, Metas, Situação Atual, Opções, Próximos Passos, Fortalezas, Oportunidades, Fraquezas, Ameaças), cada um gravado individualmente em sua própria tabela no banco de dados. Não há obrigatoriedade de preenchimento conjunto para essas propriedades.
+- Seções `Classificação de Perfil`, `CHAVE`, `GROW / PDI` e `SWOT` possuem histórico por Value Object individual. No schema implementado, `DISC`, `Personalidade` e `Nine Box` possuem tabelas próprias; já os itens de `CHAVE`, `GROW / PDI` e `SWOT` são persistidos na tabela genérica `PropriedadesHistoricas`, identificados por `Tipo`. Não há obrigatoriedade de preenchimento conjunto para essas propriedades.
+- `Classificação de Perfil` é apenas um agrupador visual no frontend; não existe tabela agregada `ClassificacoesPerfil` no banco.
 - Para tabelas de histórico por propriedade, a primeira linha é editável para novo registro e as linhas históricas são somente leitura
 - Seção `Informacoes Pessoais` com layout dedicado em 3 colunas e distribuição fixa de campos
 - Tooltip informativo sem título fixo e sem bullets, com quebra de linha simples

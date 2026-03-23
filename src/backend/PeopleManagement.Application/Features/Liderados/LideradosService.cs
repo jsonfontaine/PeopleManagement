@@ -104,17 +104,16 @@ public sealed class LideradosService
 
     public async Task AtualizarClassificacaoPerfilAsync(Guid id, string perfil, string nineBox, DateOnly data, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(perfil) || string.IsNullOrWhiteSpace(nineBox))
-        {
-            throw new RegraNegocioException("Perfil e Nine Box sao obrigatorios.");
-        }
-
+        _ = data;
         if (!await _repository.ExistePorIdAsync(id, cancellationToken))
         {
             throw new RegraNegocioException("Liderado nao encontrado.");
         }
 
-        await _repository.AtualizarClassificacaoPerfilAsync(id, perfil.Trim(), nineBox.Trim(), data, cancellationToken);
+        if (string.IsNullOrWhiteSpace(perfil) && string.IsNullOrWhiteSpace(nineBox))
+        {
+            return;
+        }
     }
 }
 
@@ -136,7 +135,6 @@ public interface ILideradosRepository
     Task SalvarCulturaAsync(Guid id, RadarCulturalResponse radar, CancellationToken cancellationToken);
     Task<RadarCulturalResponse?> ObterRadarCulturalAsync(Guid id, DateOnly data, CancellationToken cancellationToken);
     Task AtualizarInformacoesPessoaisAsync(Guid id, AtualizarInformacoesPessoaisInput input, CancellationToken cancellationToken);
-    Task AtualizarClassificacaoPerfilAsync(Guid id, string perfil, string nineBox, DateOnly data, CancellationToken cancellationToken);
 }
 
 

@@ -14,20 +14,38 @@ public sealed class LideradosServiceTests
             service.CriarAsync("Ana", CancellationToken.None));
     }
 
+    [Fact]
+    public async Task AtualizarClassificacaoPerfilAsync_DevePermitirSalvarApenasPerfil()
+    {
+        var service = new LideradosService(new FakeLideradosRepository(existeNome: false, existeId: true));
+
+        await service.AtualizarClassificacaoPerfilAsync(Guid.NewGuid(), "Executor", "", new DateOnly(2026, 3, 23), CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task AtualizarClassificacaoPerfilAsync_DevePermitirSalvarApenasNineBox()
+    {
+        var service = new LideradosService(new FakeLideradosRepository(existeNome: false, existeId: true));
+
+        await service.AtualizarClassificacaoPerfilAsync(Guid.NewGuid(), "", "High Performer", new DateOnly(2026, 3, 23), CancellationToken.None);
+    }
+
     private sealed class FakeLideradosRepository : ILideradosRepository
     {
         private readonly bool _existeNome;
+        private readonly bool _existeId;
 
-        public FakeLideradosRepository(bool existeNome)
+        public FakeLideradosRepository(bool existeNome, bool existeId = true)
         {
             _existeNome = existeNome;
+            _existeId = existeId;
         }
 
         public Task<bool> ExistePorNomeAsync(string nomeNormalizado, CancellationToken cancellationToken)
             => Task.FromResult(_existeNome);
 
         public Task<bool> ExistePorIdAsync(Guid id, CancellationToken cancellationToken)
-            => Task.FromResult(true);
+            => Task.FromResult(_existeId);
 
         public Task AdicionarAsync(LideradoSlice liderado, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<LideradoSlice?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<LideradoSlice?>(new LideradoSlice(id, "Ana", DateTime.UtcNow));
@@ -43,7 +61,6 @@ public sealed class LideradosServiceTests
         public Task SalvarCulturaAsync(Guid id, RadarCulturalResponse radar, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<RadarCulturalResponse?> ObterRadarCulturalAsync(Guid id, DateOnly data, CancellationToken cancellationToken) => Task.FromResult<RadarCulturalResponse?>(null);
         public Task AtualizarInformacoesPessoaisAsync(Guid id, AtualizarInformacoesPessoaisInput input, CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task AtualizarClassificacaoPerfilAsync(Guid id, string perfil, string nineBox, DateOnly data, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
 

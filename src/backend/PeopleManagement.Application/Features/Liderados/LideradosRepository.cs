@@ -58,9 +58,6 @@ public sealed class LideradosRepository : ILideradosRepository
 
     public Task AtualizarInformacoesPessoaisAsync(Guid id, AtualizarInformacoesPessoaisInput input, CancellationToken cancellationToken)
         => _storageCommandBus.ExecuteAsync(new AtualizarInformacoesPessoaisCommand(id, input), cancellationToken);
-
-    public Task AtualizarClassificacaoPerfilAsync(Guid id, string perfil, string nineBox, DateOnly data, CancellationToken cancellationToken)
-        => _storageCommandBus.ExecuteAsync(new AtualizarClassificacaoPerfilCommand(id, perfil, nineBox, data), cancellationToken);
 }
 
 public sealed record ExisteLideradoPorNomeQuery(string NomeNormalizado) : IStorageCommand<bool>;
@@ -79,5 +76,4 @@ public sealed record CriarOneOnOneCommand(Guid Id, CriarOneOnOneInput Input) : I
 public sealed record SalvarCulturaCommand(Guid Id, RadarCulturalResponse Radar) : IStorageCommand<StorageUnit>;
 public sealed record ObterRadarCulturalQuery(Guid Id, DateOnly Data) : IStorageCommand<RadarCulturalResponse?>;
 public sealed record AtualizarInformacoesPessoaisCommand(Guid Id, AtualizarInformacoesPessoaisInput Input) : IStorageCommand<StorageUnit>;
-public sealed record AtualizarClassificacaoPerfilCommand(Guid Id, string Perfil, string NineBox, DateOnly Data) : IStorageCommand<StorageUnit>;
 

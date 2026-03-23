@@ -18,6 +18,26 @@ public sealed class ListarDashboardCardsHandler : IStorageCommandHandler<ListarD
     {
         var liderados = await _dbContext.Liderados.AsNoTracking().ToListAsync(cancellationToken);
 
+        var perfilByLiderado = await _dbContext.Personalidades
+            .AsNoTracking()
+            .GroupBy(x => x.IdLiderado.ToLower())
+            .Select(group => new
+            {
+                LideradoId = group.Key,
+                Valor = group.OrderByDescending(x => x.Data).Select(x => x.Valor).FirstOrDefault()
+            })
+            .ToDictionaryAsync(x => x.LideradoId, x => x.Valor, cancellationToken);
+
+        var nineBoxByLiderado = await _dbContext.NineBoxes
+            .AsNoTracking()
+            .GroupBy(x => x.IdLiderado.ToLower())
+            .Select(group => new
+            {
+                LideradoId = group.Key,
+                Valor = group.OrderByDescending(x => x.Data).Select(x => x.Valor).FirstOrDefault()
+            })
+            .ToDictionaryAsync(x => x.LideradoId, x => x.Valor, cancellationToken);
+
         var oneOnOneCountByLiderado = await _dbContext.OneOnOnes
             .AsNoTracking()
             .GroupBy(x => x.LideradoId.ToLower())
@@ -34,8 +54,8 @@ public sealed class ListarDashboardCardsHandler : IStorageCommandHandler<ListarD
             .Select(liderado => new DashboardCardProjection(
                 liderado.Id.ToLowerInvariant(),
                 liderado.Nome,
-                null,
-                null,
+                perfilByLiderado.GetValueOrDefault(liderado.Id.ToLowerInvariant()),
+                nineBoxByLiderado.GetValueOrDefault(liderado.Id.ToLowerInvariant()),
                 feedbackCountByLiderado.GetValueOrDefault(liderado.Id.ToLowerInvariant(), 0),
                 oneOnOneCountByLiderado.GetValueOrDefault(liderado.Id.ToLowerInvariant(), 0),
                 null,

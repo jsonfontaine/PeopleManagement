@@ -1,9 +1,18 @@
 -- Script de criação da base e tabelas para People Management (SQLite)
--- Gerado conforme modelagem de dados do TSD.md
+-- Alinhado ao schema atualmente implementado no backend
 
--- Tabela: Liderado
-CREATE TABLE Liderado (
+-- Tabela principal de liderados
+CREATE TABLE Liderados (
     Id TEXT PRIMARY KEY,
+    Nome TEXT NOT NULL,
+    DataCriacaoUtc TEXT NOT NULL
+);
+
+CREATE INDEX IX_Liderados_Nome ON Liderados (Nome);
+
+-- Informações pessoais (1:1 com Liderados)
+CREATE TABLE InformacoesPessoais (
+    LideradoId TEXT PRIMARY KEY,
     Nome TEXT NOT NULL,
     DataNascimento DATE,
     EstadoCivil TEXT,
@@ -11,219 +20,104 @@ CREATE TABLE Liderado (
     DataContratacao DATE,
     Cargo TEXT,
     DataInicioCargo DATE,
-    Aspiracao TEXT,
+    AspiracaoCarreira TEXT,
     GostosPessoais TEXT,
+    RedFlags TEXT,
     Bio TEXT,
-    RedFlags TEXT
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: Propriedade
-CREATE TABLE Propriedade (
-    Id TEXT PRIMARY KEY,
-    Nome TEXT NOT NULL,
-    Secao TEXT,
-    Tooltip TEXT
-);
-
--- Tabela: Conhecimento
-CREATE TABLE Conhecimento (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Habilidade
-CREATE TABLE Habilidade (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Atitude
-CREATE TABLE Atitude (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Valor
-CREATE TABLE Valor (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Expectativa
-CREATE TABLE Expectativa (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Metas
-CREATE TABLE Metas (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: SituacaoAtual
-CREATE TABLE SituacaoAtual (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Opcoes
-CREATE TABLE Opcoes (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: ProximosPassos
-CREATE TABLE ProximosPassos (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: DISC
-CREATE TABLE DISC (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Personalidade
-CREATE TABLE Personalidade (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: NineBox
-CREATE TABLE NineBox (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: CulturaGenial
-CREATE TABLE CulturaGenial (
-    IdLiderado TEXT NOT NULL,
-    Protagonismo INTEGER,
-    Colaboracao INTEGER,
-    Inovacao INTEGER,
-    OrientacaoParaResultado INTEGER,
-    FocoNoCliente INTEGER,
-    Etica INTEGER,
-    Transparencia INTEGER,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Feedback
-CREATE TABLE Feedback (
-    IdLiderado TEXT NOT NULL,
-    Conteudo TEXT,
-    Polaridade TEXT,
-    Receptividade TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: OneOnOne
-CREATE TABLE OneOnOne (
-    IdLiderado TEXT NOT NULL,
-    Resumo TEXT,
-    Tarefas TEXT,
-    ProximosAssuntos TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Fortaleza
-CREATE TABLE Fortaleza (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Oportunidade
-CREATE TABLE Oportunidade (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Fraqueza
-CREATE TABLE Fraqueza (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: Ameaca
-CREATE TABLE Ameaca (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: FatoObservacao
-CREATE TABLE FatoObservacao (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE,
-    PRIMARY KEY (IdLiderado, Data)
-);
-
--- Tabela: HistoricoAlteracoes
-CREATE TABLE HistoricoAlteracoes (
+-- Feedbacks
+CREATE TABLE Feedbacks (
     Id TEXT PRIMARY KEY,
     LideradoId TEXT NOT NULL,
-    Secao TEXT NOT NULL,
-    Campo TEXT NOT NULL,
-    ValorAnterior TEXT,
-    ValorNovo TEXT NOT NULL,
-    DataAlteracaoUtc TEXT NOT NULL,
-    UsuarioResponsavel TEXT NOT NULL,
-    FOREIGN KEY (LideradoId) REFERENCES Liderado(Id) ON DELETE CASCADE
+    Data DATE NOT NULL,
+    Conteudo TEXT NOT NULL,
+    Receptividade TEXT NOT NULL,
+    Polaridade TEXT NOT NULL,
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
+
+CREATE INDEX IX_Feedbacks_LideradoId_Data ON Feedbacks (LideradoId, Data);
+
+-- One-on-ones
+CREATE TABLE OneOnOnes (
+    Id TEXT PRIMARY KEY,
+    LideradoId TEXT NOT NULL,
+    Data DATE NOT NULL,
+    Resumo TEXT NOT NULL,
+    TarefasAcordadas TEXT NOT NULL,
+    ProximosAssuntos TEXT NOT NULL,
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_OneOnOnes_LideradoId_Data ON OneOnOnes (LideradoId, Data);
+
+-- Avaliações de cultura
+CREATE TABLE CulturaAvaliacoes (
+    Id TEXT PRIMARY KEY,
+    LideradoId TEXT NOT NULL,
+    Data DATE NOT NULL,
+    AprenderEMelhorarSempre INTEGER NOT NULL,
+    AtitudeDeDono INTEGER NOT NULL,
+    BuscarMelhoresResultadosParaClientes INTEGER NOT NULL,
+    EspiritoDeEquipe INTEGER NOT NULL,
+    Excelencia INTEGER NOT NULL,
+    FazerAcontecer INTEGER NOT NULL,
+    InovarParaInspirar INTEGER NOT NULL,
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IX_CulturaAvaliacoes_LideradoId_Data ON CulturaAvaliacoes (LideradoId, Data);
+
+-- Tooltips por chave de campo
+CREATE TABLE Tooltips (
+    ChaveCampo TEXT PRIMARY KEY,
+    Texto TEXT NOT NULL
+);
+
+-- Histórico individual de DISC
+CREATE TABLE Disc (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+-- Histórico individual de Personalidade
+CREATE TABLE Personalidade (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+-- Histórico individual de Nine Box
+CREATE TABLE NineBox (
+    IdLiderado TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+-- Classificação de Perfil é apenas agrupador de UI.
+-- Não existe tabela agregada ClassificacoesPerfil no banco.
+
+-- Histórico genérico de propriedades para CHAVE, GROW / PDI e SWOT.
+-- O campo Tipo armazena a propriedade, por exemplo:
+-- conhecimentos, habilidades, atitudes, valores, expectativas,
+-- metas, situacaoAtual, opcoes, proximosPassos,
+-- fortalezas, oportunidades, fraquezas, ameacas.
+CREATE TABLE PropriedadesHistoricas (
+    IdLiderado TEXT NOT NULL,
+    Tipo TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Tipo, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_PropriedadesHistoricas_IdLiderado_Tipo ON PropriedadesHistoricas (IdLiderado, Tipo);

@@ -5,6 +5,8 @@ using PeopleManagement.Application.Common.Storage;
 using PeopleManagement.Application.Features.Dashboard;
 using PeopleManagement.Application.Features.Disc;
 using PeopleManagement.Application.Features.Liderados;
+using PeopleManagement.Application.Features.NineBox;
+using PeopleManagement.Application.Features.Personalidade;
 using PeopleManagement.Application.Features.PropHistorica;
 using PeopleManagement.Application.Features.Tooltips;
 using PeopleManagement.Infrastructure.Persistence;
@@ -30,6 +32,16 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStorageCommandHandler<SalvarDiscCommand, StorageUnit>, SalvarDiscHandler>();
         services.AddScoped<IStorageCommandHandler<RemoverDiscCommand, StorageUnit>, RemoverDiscHandler>();
 
+        services.AddScoped<IStorageCommandHandler<ListarPersonalidadeQuery, IReadOnlyCollection<PersonalidadeRegistro>>, ListarPersonalidadeHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoPersonalidadeQuery, bool>, VerificarExistenciaLideradoPersonalidadeHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarPersonalidadeCommand, StorageUnit>, SalvarPersonalidadeHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverPersonalidadeCommand, StorageUnit>, RemoverPersonalidadeHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarNineBoxQuery, IReadOnlyCollection<NineBoxRegistro>>, ListarNineBoxHandler>();
+        services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoNineBoxQuery, bool>, VerificarExistenciaLideradoNineBoxHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarNineBoxCommand, StorageUnit>, SalvarNineBoxHandler>();
+        services.AddScoped<IStorageCommandHandler<RemoverNineBoxCommand, StorageUnit>, RemoverNineBoxHandler>();
+
         services.AddScoped<IStorageCommandHandler<ExisteLideradoPorNomeQuery, bool>, ExisteLideradoPorNomeHandler>();
         services.AddScoped<IStorageCommandHandler<ExisteLideradoPorIdQuery, bool>, ExisteLideradoPorIdHandler>();
         services.AddScoped<IStorageCommandHandler<AdicionarLideradoCommand, StorageUnit>, AdicionarLideradoHandler>();
@@ -46,7 +58,6 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStorageCommandHandler<SalvarCulturaCommand, StorageUnit>, SalvarCulturaHandler>();
         services.AddScoped<IStorageCommandHandler<ObterRadarCulturalQuery, RadarCulturalResponse?>, ObterRadarCulturalHandler>();
         services.AddScoped<IStorageCommandHandler<AtualizarInformacoesPessoaisCommand, StorageUnit>, AtualizarInformacoesPessoaisHandler>();
-        services.AddScoped<IStorageCommandHandler<AtualizarClassificacaoPerfilCommand, StorageUnit>, AtualizarClassificacaoPerfilHandler>();
 
         services.AddScoped<IStorageCommandHandler<ObterTooltipQuery, TooltipResponse?>, ObterTooltipHandler>();
         services.AddScoped<IStorageCommandHandler<SalvarTooltipCommand, StorageUnit>, SalvarTooltipHandler>();

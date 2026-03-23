@@ -1,9 +1,16 @@
 -- Script de criação da base e tabelas para People Management (SQLite)
--- Gerado conforme modelagem de dados do TSD.md
+-- Alinhado ao schema atualmente implementado no backend
 
--- Tabela: Liderado
-CREATE TABLE Liderado (
+CREATE TABLE Liderados (
     Id TEXT PRIMARY KEY,
+    Nome TEXT NOT NULL,
+    DataCriacaoUtc TEXT NOT NULL
+);
+
+CREATE INDEX IX_Liderados_Nome ON Liderados (Nome);
+
+CREATE TABLE InformacoesPessoais (
+    LideradoId TEXT PRIMARY KEY,
     Nome TEXT NOT NULL,
     DataNascimento DATE,
     EstadoCivil TEXT,
@@ -11,207 +18,92 @@ CREATE TABLE Liderado (
     DataContratacao DATE,
     Cargo TEXT,
     DataInicioCargo DATE,
-    Aspiracao TEXT,
+    AspiracaoCarreira TEXT,
     GostosPessoais TEXT,
+    RedFlags TEXT,
     Bio TEXT,
-    RedFlags TEXT
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: Propriedade
-CREATE TABLE Propriedade (
+CREATE TABLE Feedbacks (
     Id TEXT PRIMARY KEY,
-    Nome TEXT NOT NULL,
-    Secao TEXT,
-    Tooltip TEXT
+    LideradoId TEXT NOT NULL,
+    Data DATE NOT NULL,
+    Conteudo TEXT NOT NULL,
+    Receptividade TEXT NOT NULL,
+    Polaridade TEXT NOT NULL,
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: Conhecimento
-CREATE TABLE Conhecimento (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
+CREATE INDEX IX_Feedbacks_LideradoId_Data ON Feedbacks (LideradoId, Data);
+
+CREATE TABLE OneOnOnes (
+    Id TEXT PRIMARY KEY,
+    LideradoId TEXT NOT NULL,
+    Data DATE NOT NULL,
+    Resumo TEXT NOT NULL,
+    TarefasAcordadas TEXT NOT NULL,
+    ProximosAssuntos TEXT NOT NULL,
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: Habilidade
-CREATE TABLE Habilidade (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
+CREATE INDEX IX_OneOnOnes_LideradoId_Data ON OneOnOnes (LideradoId, Data);
+
+CREATE TABLE CulturaAvaliacoes (
+    Id TEXT PRIMARY KEY,
+    LideradoId TEXT NOT NULL,
+    Data DATE NOT NULL,
+    AprenderEMelhorarSempre INTEGER NOT NULL,
+    AtitudeDeDono INTEGER NOT NULL,
+    BuscarMelhoresResultadosParaClientes INTEGER NOT NULL,
+    EspiritoDeEquipe INTEGER NOT NULL,
+    Excelencia INTEGER NOT NULL,
+    FazerAcontecer INTEGER NOT NULL,
+    InovarParaInspirar INTEGER NOT NULL,
+    FOREIGN KEY (LideradoId) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: Atitude
-CREATE TABLE Atitude (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
+CREATE UNIQUE INDEX IX_CulturaAvaliacoes_LideradoId_Data ON CulturaAvaliacoes (LideradoId, Data);
+
+CREATE TABLE Tooltips (
+    ChaveCampo TEXT PRIMARY KEY,
+    Texto TEXT NOT NULL
 );
 
--- Tabela: Valor
-CREATE TABLE Valor (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE Disc (
     IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: Expectativa
-CREATE TABLE Expectativa (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: Metas
-CREATE TABLE Metas (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: SituacaoAtual
-CREATE TABLE SituacaoAtual (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: Opcoes
-CREATE TABLE Opcoes (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: ProximosPassos
-CREATE TABLE ProximosPassos (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: DISC
-CREATE TABLE DISC (
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
     PRIMARY KEY (IdLiderado, Data),
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: Personalidade
 CREATE TABLE Personalidade (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
     IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: NineBox
 CREATE TABLE NineBox (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
     IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: CulturaGenial
-CREATE TABLE CulturaGenial (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+-- Classificacao de Perfil e apenas agrupador de UI (nao existe tabela dedicada).
+
+CREATE TABLE PropriedadesHistoricas (
     IdLiderado TEXT NOT NULL,
-    Protagonismo INTEGER,
-    Colaboracao INTEGER,
-    Inovacao INTEGER,
-    OrientacaoParaResultado INTEGER,
-    FocoNoCliente INTEGER,
-    Etica INTEGER,
-    Transparencia INTEGER,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
+    Tipo TEXT NOT NULL,
+    Data TEXT NOT NULL,
+    Valor TEXT NOT NULL,
+    PRIMARY KEY (IdLiderado, Tipo, Data),
+    FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
--- Tabela: Feedback
-CREATE TABLE Feedback (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Conteudo TEXT,
-    Polaridade TEXT,
-    Receptividade TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: OneOnOne
-CREATE TABLE OneOnOne (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Resumo TEXT,
-    Tarefas TEXT,
-    ProximosAssuntos TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: Fortaleza
-CREATE TABLE Fortaleza (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: Oportunidade
-CREATE TABLE Oportunidade (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: Fraqueza
-CREATE TABLE Fraqueza (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: Ameaca
-CREATE TABLE Ameaca (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
-
--- Tabela: FatoObservacao
-CREATE TABLE FatoObservacao (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    IdLiderado TEXT NOT NULL,
-    Valor TEXT,
-    Data DATE,
-    FOREIGN KEY (IdLiderado) REFERENCES Liderado(Id) ON DELETE CASCADE
-);
+CREATE INDEX IX_PropriedadesHistoricas_IdLiderado_Tipo ON PropriedadesHistoricas (IdLiderado, Tipo);
 
