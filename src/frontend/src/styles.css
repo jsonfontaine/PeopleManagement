@@ -351,6 +351,40 @@ textarea {
   word-break: break-word;
 }
 
+.classification-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.classification-column {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(11, 18, 32, 0.55);
+  min-width: 0;
+}
+
+.classification-column-header {
+  margin-bottom: 8px;
+}
+
+.classification-column-header h4 {
+  font-size: 14px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.classification-column .history-table {
+  margin-bottom: 10px;
+}
+
+.classification-column-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .history-table th,
 .history-table td {
   border-bottom: 1px solid var(--line);
@@ -655,5 +689,9 @@ textarea {
     border-top: 1px dashed var(--line);
     padding-left: 0;
     padding-top: 10px;
+  }
+
+  .classification-columns {
+    grid-template-columns: 1fr;
   }
 }

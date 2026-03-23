@@ -11,6 +11,10 @@ const TAB_ORDER = [
   "1:1"
 ];
 
+const TAB_LABELS = {
+  "Classificacao de Perfil": "Perfil e Classificacao"
+};
+
 const PROPERTY_SECTION_CONFIG = {
   "Classificacao de Perfil": {
     secaoAliases: ["ClassificacaoDePerfil", "Classificacao", "Perfil"],
@@ -354,6 +358,71 @@ function PropertyTabsSection({ groups, renderInfoIcon, classificacaoPerfilDraft,
   );
 }
 
+function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, onDraftChange, onSaveColumn, dateInputRefs }) {
+  return (
+    <div className="classification-columns">
+      {groups.map((group) => {
+        const draft = classificacaoPerfilDraft?.[group.tooltipKey] || { data: "", valor: "" };
+        return (
+          <article key={group.tooltipKey} className="classification-column">
+            <div className="classification-column-header">
+              <h4>
+                {group.label} {renderInfoIcon(group.label, group.tooltipKey)}
+              </h4>
+            </div>
+
+            <table className="history-table classification-table" style={{ tableLayout: "fixed", width: "100%" }}>
+              <thead>
+                <tr>
+                  <th className="col-date" style={{ width: "150px", minWidth: "150px", maxWidth: "150px" }}>Data</th>
+                  <th className="col-value">Registro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="history-edit">
+                  <td className="date-cell">
+                    <MaskedDateInput
+                      className="date-input"
+                      ariaLabel={`Data do registro de ${group.label}`}
+                      value={draft.data || ""}
+                      inputRef={(element) => {
+                        if (element) {
+                          dateInputRefs.current[group.tooltipKey] = element;
+                        }
+                      }}
+                      onChange={(nextValue) => onDraftChange(group.tooltipKey, "data", nextValue)}
+                    />
+                  </td>
+                  <td>
+                    <textarea
+                      rows="2"
+                      placeholder={`Registrar ${group.label}`}
+                      value={draft.valor || ""}
+                      onChange={(event) => onDraftChange(group.tooltipKey, "valor", event.target.value)}
+                    />
+                  </td>
+                </tr>
+                {group.rows.map((row) => (
+                  <tr key={`${row.data}-${row.valor}`}>
+                    <td>{row.data}</td>
+                    <td>{row.valor}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="classification-column-actions">
+              <button type="button" className="btn ghost small" onClick={() => onSaveColumn(group.tooltipKey)}>
+                Salvar
+              </button>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 function App() {
   const [view, setView] = useState("dashboard");
   const [loading, setLoading] = useState(true);
@@ -407,10 +476,9 @@ function App() {
   const animationFrameRef = useRef(null);
 
   const [classificacaoPerfilDraft, setClassificacaoPerfilDraft] = useState({
-    disc: "",
-    personalidade: "",
-    nineBox: "",
-    dataDisc: ""
+    disc: { data: "", valor: "" },
+    personalidade: { data: "", valor: "" },
+    nineBox: { data: "", valor: "" }
   });
 
   const [discHistorico, setDiscHistorico] = useState([]);
@@ -420,7 +488,7 @@ function App() {
   const [propDrafts, setPropDrafts] = useState({});
   const [activePropKeys, setActivePropKeys] = useState({});
   const prevLideradoIdRef = useRef(null);
-  const classificacaoDataInputRef = useRef(null);
+  const classificacaoDataInputRefs = useRef({});
 
   useEffect(() => {
     let active = true;
@@ -585,12 +653,11 @@ function App() {
 
         // Initialize classificacaoPerfilDraft from leaderView/classificacaoPerfil
         const classificacao = visao?.conteudo?.classificacaoPerfil || visao?.conteudo || {};
+        const initialDate = toDisplayDate(classificacao.dataDisc || classificacao.Data || classificacao.dataAtualizacaoUtc || "");
         setClassificacaoPerfilDraft({
-          disc: classificacao.disc || "",
-          // Personalidade/Nine Box are independent VOs and should be typed explicitly per save.
-          personalidade: "",
-          nineBox: "",
-          dataDisc: toDisplayDate(classificacao.dataDisc || classificacao.Data || classificacao.dataAtualizacaoUtc || "")
+          disc: { data: initialDate, valor: "" },
+          personalidade: { data: initialDate, valor: "" },
+          nineBox: { data: initialDate, valor: "" }
         });
       } catch (loadError) {
         if (active) {
@@ -1007,76 +1074,76 @@ function App() {
     }
   }
 
-  async function handleSaveClassificacaoPerfil() {
+  async function handleSaveClassificacaoPerfilByTipo(tipo) {
     setError("");
     if (!selectedLideradoId) {
       setError("Nenhum liderado selecionado.");
       return;
     }
-    const dataDiscTexto = String(classificacaoPerfilDraft.dataDisc || "").trim();
-    if (!toIsoDate(dataDiscTexto)) {
-      setError(buildDiscDateErrorMessage(dataDiscTexto));
+    const draft = classificacaoPerfilDraft?.[tipo] || { data: "", valor: "" };
+    const dataTexto = String(draft.data || "").trim();
+    if (!toIsoDate(dataTexto)) {
+      setError(buildDiscDateErrorMessage(dataTexto));
       return;
     }
-    try {
-      const activeKey = activePropKeys["Classificacao de Perfil"] || "disc";
-      const valueByKey = {
-        disc: classificacaoPerfilDraft.disc,
-        personalidade: classificacaoPerfilDraft.personalidade,
-        nineBox: classificacaoPerfilDraft.nineBox
+
+    const valueToSave = String(draft.valor || "").trim();
+    if (!valueToSave) {
+      const labelByKey = {
+        disc: "DISC",
+        personalidade: "Personalidade",
+        nineBox: "Nine Box"
       };
+      setError(`Preencha o campo ${labelByKey[tipo]} antes de salvar.`);
+      return;
+    }
 
-      const valueToSave = String(valueByKey[activeKey] || "").trim();
-      if (!valueToSave) {
-        const labelByKey = {
-          disc: "DISC",
-          personalidade: "Personalidade",
-          nineBox: "Nine Box"
-        };
-        setError(`Preencha o campo ${labelByKey[activeKey]} antes de salvar.`);
-        return;
-      }
-
-      if (activeKey === "disc") {
+    try {
+      if (tipo === "disc") {
         await requestJson(`/api/disc`, {
           method: "POST",
           body: JSON.stringify({
             lideradoId: selectedLideradoId,
             disc: valueToSave,
-            data: dataDiscTexto
+            data: dataTexto
           })
         });
         const discResponse = await requestJson(`/api/disc/${selectedLideradoId}`);
         setDiscHistorico(discResponse?.registros || []);
-        setClassificacaoPerfilDraft((draft) => ({ ...draft, disc: "" }));
-      } else if (activeKey === "personalidade") {
+      } else if (tipo === "personalidade") {
         await requestJson(`/api/personalidade`, {
           method: "POST",
           body: JSON.stringify({
             lideradoId: selectedLideradoId,
             valor: valueToSave,
-            data: dataDiscTexto
+            data: dataTexto
           })
         });
         const personalidadeResponse = await requestJson(`/api/personalidade/${selectedLideradoId}`);
         setPersonalidadeHistorico(personalidadeResponse?.registros || []);
-        setClassificacaoPerfilDraft((draft) => ({ ...draft, personalidade: "" }));
-      } else if (activeKey === "nineBox") {
+      } else if (tipo === "nineBox") {
         await requestJson(`/api/nine-box`, {
           method: "POST",
           body: JSON.stringify({
             lideradoId: selectedLideradoId,
             valor: valueToSave,
-            data: dataDiscTexto
+            data: dataTexto
           })
         });
         const nineBoxResponse = await requestJson(`/api/nine-box/${selectedLideradoId}`);
         setNineBoxHistorico(nineBoxResponse?.registros || []);
-        setClassificacaoPerfilDraft((draft) => ({ ...draft, nineBox: "" }));
       }
 
+      setClassificacaoPerfilDraft((prev) => ({
+        ...prev,
+        [tipo]: {
+          ...(prev[tipo] || { data: "", valor: "" }),
+          valor: ""
+        }
+      }));
+
       requestAnimationFrame(() => {
-        classificacaoDataInputRef.current?.focus();
+        classificacaoDataInputRefs.current[tipo]?.focus();
       });
 
       setLeaderReloadKey((value) => value + 1);
@@ -1086,6 +1153,10 @@ function App() {
     } catch (e) {
       setError(e.message);
     }
+  }
+
+  function getTabLabel(tabName) {
+    return TAB_LABELS[tabName] || tabName;
   }
 
   function getTooltipText(key) {
@@ -1363,7 +1434,7 @@ function App() {
                   className={`tab-btn ${tab === activeTab ? "active" : ""}`}
                   onClick={() => setActiveTab(tab)}
                 >
-                  {tab}
+                  {getTabLabel(tab)}
                 </button>
               ))}
             </div>
@@ -1672,27 +1743,40 @@ function App() {
 
               {/* Fatos e Observacoes tab removed */}
 
-              {["Classificacao de Perfil", "CHAVE", "GROW / PDI", "SWOT"].includes(activeTab) ? (
+              {activeTab === "Classificacao de Perfil" ? (
+                <section className="panel section single-column">
+                  <div className="panel-header">
+                    <h3 className="section-title">{getTabLabel(activeTab)}</h3>
+                  </div>
+                  <div className="fields fields--prop-tabs">
+                    <ClassificacaoPerfilColumnsSection
+                      groups={propertySectionData[activeTab] || []}
+                      renderInfoIcon={renderInfoIcon}
+                      classificacaoPerfilDraft={classificacaoPerfilDraft}
+                      onDraftChange={(tipo, field, value) =>
+                        setClassificacaoPerfilDraft((prev) => ({
+                          ...prev,
+                          [tipo]: { ...(prev[tipo] || { data: "", valor: "" }), [field]: value }
+                        }))
+                      }
+                      onSaveColumn={handleSaveClassificacaoPerfilByTipo}
+                      dateInputRefs={classificacaoDataInputRefs}
+                    />
+                  </div>
+                </section>
+              ) : null}
+
+              {["CHAVE", "GROW / PDI", "SWOT"].includes(activeTab) ? (
                 <section className="panel section single-column">
                   <div className="panel-header">
                     <h3 className="section-title">{activeTab}</h3>
-                    {activeTab === "Classificacao de Perfil" ? (
-                      <button
-                        type="button"
-                        className="btn ghost small"
-                        onClick={handleSaveClassificacaoPerfil}
-                      >
-                        Salvar
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn ghost small"
-                        onClick={() => handleSavePropHistorica(activeTab)}
-                      >
-                        Salvar
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="btn ghost small"
+                      onClick={() => handleSavePropHistorica(activeTab)}
+                    >
+                      Salvar
+                    </button>
                   </div>
                   <div className="fields fields--prop-tabs">
                     <PropertyTabsSection
@@ -1700,24 +1784,15 @@ function App() {
                       renderInfoIcon={renderInfoIcon}
                       activePropertyKey={activePropKeys[activeTab]}
                       onActiveKeyChange={(key) =>
-                        setActivePropKeys(prev => ({ ...prev, [activeTab]: key }))
+                        setActivePropKeys((prev) => ({ ...prev, [activeTab]: key }))
                       }
-                      {...(activeTab === "Classificacao de Perfil"
-                        ? {
-                            classificacaoPerfilDraft,
-                            setClassificacaoPerfilDraft,
-                            isClassificacaoPerfil: true,
-                            dateInputRef: classificacaoDataInputRef
-                          }
-                        : {
-                            propDrafts,
-                            onPropDraftChange: (tipo, field, value) =>
-                              setPropDrafts(prev => ({
-                                ...prev,
-                                [tipo]: { ...(prev[tipo] || { data: "", valor: "" }), [field]: value }
-                              }))
-                          }
-                      )}
+                      propDrafts={propDrafts}
+                      onPropDraftChange={(tipo, field, value) =>
+                        setPropDrafts((prev) => ({
+                          ...prev,
+                          [tipo]: { ...(prev[tipo] || { data: "", valor: "" }), [field]: value }
+                        }))
+                      }
                     />
                   </div>
                 </section>
