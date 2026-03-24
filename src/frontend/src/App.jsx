@@ -134,6 +134,179 @@ function buildDiscDateErrorMessage(value) {
   return `Nao consegui entender a data "${typedValue}". Use o formato dd/MM/aaaa (ex.: 27/11/2025).`;
 }
 
+const RICH_TEXT_ALLOWED_TAGS = new Set([
+  "B",
+  "STRONG",
+  "I",
+  "EM",
+  "U",
+  "S",
+  "BR",
+  "P",
+  "DIV",
+  "UL",
+  "OL",
+  "LI",
+  "BLOCKQUOTE",
+  "A"
+]);
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function convertPlainTextToHtml(value) {
+  return escapeHtml(value).replace(/\r?\n/g, "<br>");
+}
+
+function sanitizeRichText(value) {
+  const rawHtml = String(value || "");
+  if (!rawHtml.trim()) {
+    return "";
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${rawHtml}</div>`, "text/html");
+  const root = doc.body.firstElementChild;
+  if (!root) {
+    return "";
+  }
+
+  const sanitizeNode = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent || "";
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return "";
+    }
+
+    const element = node;
+    const tag = element.tagName.toUpperCase();
+    const sanitizedChildren = Array.from(element.childNodes).map(sanitizeNode).join("");
+
+    if (!RICH_TEXT_ALLOWED_TAGS.has(tag)) {
+      return sanitizedChildren;
+    }
+
+    if (tag === "BR") {
+      return "<br>";
+    }
+
+    if (tag === "A") {
+      const href = element.getAttribute("href") || "";
+      const isSafeHref = /^(https?:\/\/|mailto:|#)/i.test(href);
+      const safeHref = isSafeHref ? href : "#";
+      const escapedHref = escapeHtml(safeHref);
+      return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${sanitizedChildren}</a>`;
+    }
+
+    return `<${tag.toLowerCase()}>${sanitizedChildren}</${tag.toLowerCase()}>`;
+  };
+
+  return Array.from(root.childNodes).map(sanitizeNode).join("");
+}
+
+function normalizeRichTextValue(value) {
+  const text = String(value || "");
+  if (!text.trim()) {
+    return "";
+  }
+
+  const hasHtml = /<\/?[a-z][\s\S]*>/i.test(text);
+  return hasHtml ? sanitizeRichText(text) : convertPlainTextToHtml(text);
+}
+
+function richTextToPlainText(value) {
+  const html = normalizeRichTextValue(value);
+  if (!html) {
+    return "";
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  return (doc.body.textContent || "").replace(/\u00A0/g, " ").trim();
+}
+
+function isRichTextEmpty(value) {
+  return !richTextToPlainText(value);
+}
+
+function RichTextEditor({ value, onChange, placeholder = "", className = "", minHeight = 66 }) {
+  const editorRef = useRef(null);
+  const normalizedValue = useMemo(() => normalizeRichTextValue(value), [value]);
+
+  useEffect(() => {
+    if (!editorRef.current) {
+      return;
+    }
+
+    if (editorRef.current.innerHTML !== normalizedValue) {
+      editorRef.current.innerHTML = normalizedValue;
+    }
+  }, [normalizedValue]);
+
+  function updateValue() {
+    const html = sanitizeRichText(editorRef.current?.innerHTML || "");
+    onChange?.(html);
+  }
+
+  function execute(command) {
+    editorRef.current?.focus();
+    document.execCommand(command, false, null);
+    updateValue();
+  }
+
+  function handleCreateLink() {
+    editorRef.current?.focus();
+    const url = window.prompt("Informe a URL do link (https://...):", "https://");
+    if (!url) {
+      return;
+    }
+
+    document.execCommand("createLink", false, url);
+    updateValue();
+  }
+
+  return (
+    <div className={`rich-text-editor ${className}`}>
+      <div className="rich-text-toolbar" aria-label="Formatacao de texto">
+        <button type="button" className="btn ghost small" onClick={() => execute("bold")}>B</button>
+        <button type="button" className="btn ghost small" onClick={() => execute("italic")}>I</button>
+        <button type="button" className="btn ghost small" onClick={() => execute("underline")}>U</button>
+        <button type="button" className="btn ghost small" onClick={() => execute("insertUnorderedList")}>Lista</button>
+        <button type="button" className="btn ghost small" onClick={() => execute("insertOrderedList")}>1.</button>
+        <button type="button" className="btn ghost small" onClick={handleCreateLink}>Link</button>
+        <button type="button" className="btn ghost small" onClick={() => execute("removeFormat")}>Limpar</button>
+      </div>
+      <div
+        ref={editorRef}
+        className="rich-text-input"
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        style={{ minHeight }}
+        onInput={updateValue}
+        onBlur={updateValue}
+      />
+    </div>
+  );
+}
+
+function RichTextView({ value, className = "" }) {
+  const html = useMemo(() => normalizeRichTextValue(value), [value]);
+  if (!html) {
+    return <span>-</span>;
+  }
+
+  return <div className={`rich-text-view ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 async function requestJson(path, options) {
   const response = await fetch(path, {
     headers: {
@@ -289,6 +462,7 @@ function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificac
                   <td>
                     <textarea
                       rows="2"
+                      className="plain-textarea"
                       placeholder={`Registrar ${group.label}`}
                       value={draft.valor || ""}
                       onChange={(event) => onDraftChange(group.tooltipKey, "valor", event.target.value)}
@@ -298,7 +472,7 @@ function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificac
                 {group.rows.map((row) => (
                   <tr key={`${row.data}-${row.valor}`}>
                     <td>{row.data}</td>
-                    <td>{row.valor}</td>
+                    <td>{richTextToPlainText(row.valor) || row.valor}</td>
                   </tr>
                 ))}
               </tbody>
@@ -375,18 +549,18 @@ function HistoricalPropertyTabsSection({ sections, renderInfoIcon, initialActive
                   />
                 </td>
                 <td>
-                  <textarea
-                    rows="2"
+                  <RichTextEditor
+                    minHeight={62}
                     placeholder={`Registrar ${section.label}`}
                     value={section.draft?.valor || ""}
-                    onChange={(event) => section.onDraftChange("valor", event.target.value)}
+                    onChange={(nextValue) => section.onDraftChange("valor", nextValue)}
                   />
                 </td>
               </tr>
               {(section.historico || []).map((row) => (
                 <tr key={`${row.data}-${row.valor}`}>
                   <td>{row.data}</td>
-                  <td>{row.valor}</td>
+                  <td><RichTextView value={row.valor} /></td>
                 </tr>
               ))}
             </tbody>
@@ -1325,11 +1499,11 @@ function App() {
       setError("Informe a data de Feedbacks no formato dd/MM/aaaa (ex.: 27/11/2025).");
       return;
     }
-    if (!feedbackDraft.conteudo?.trim()) {
+    if (isRichTextEmpty(feedbackDraft.conteudo)) {
       setError("O conteudo de Feedbacks e obrigatorio.");
       return;
     }
-    if (!feedbackDraft.receptividade?.trim()) {
+    if (isRichTextEmpty(feedbackDraft.receptividade)) {
       setError("A receptividade de Feedbacks e obrigatoria.");
       return;
     }
@@ -1339,8 +1513,8 @@ function App() {
         method: "POST",
         body: JSON.stringify({
           lideradoId: selectedLideradoId,
-          conteudo: feedbackDraft.conteudo.trim(),
-          receptividade: feedbackDraft.receptividade.trim(),
+          conteudo: sanitizeRichText(feedbackDraft.conteudo),
+          receptividade: sanitizeRichText(feedbackDraft.receptividade),
           polaridade: feedbackDraft.polaridade,
           data: isoDate
         })
@@ -1372,15 +1546,15 @@ function App() {
       setError("Informe a data de 1:1 no formato dd/MM/aaaa (ex.: 27/11/2025).");
       return;
     }
-    if (!oneOnOneDraft.resumo?.trim()) {
+    if (isRichTextEmpty(oneOnOneDraft.resumo)) {
       setError("O resumo de 1:1 e obrigatorio.");
       return;
     }
-    if (!oneOnOneDraft.tarefasAcordadas?.trim()) {
+    if (isRichTextEmpty(oneOnOneDraft.tarefasAcordadas)) {
       setError("As tarefas acordadas de 1:1 sao obrigatorias.");
       return;
     }
-    if (!oneOnOneDraft.proximosAssuntos?.trim()) {
+    if (isRichTextEmpty(oneOnOneDraft.proximosAssuntos)) {
       setError("Os proximos assuntos de 1:1 sao obrigatorios.");
       return;
     }
@@ -1390,9 +1564,9 @@ function App() {
         method: "POST",
         body: JSON.stringify({
           lideradoId: selectedLideradoId,
-          resumo: oneOnOneDraft.resumo.trim(),
-          tarefasAcordadas: oneOnOneDraft.tarefasAcordadas.trim(),
-          proximosAssuntos: oneOnOneDraft.proximosAssuntos.trim(),
+          resumo: sanitizeRichText(oneOnOneDraft.resumo),
+          tarefasAcordadas: sanitizeRichText(oneOnOneDraft.tarefasAcordadas),
+          proximosAssuntos: sanitizeRichText(oneOnOneDraft.proximosAssuntos),
           data: isoDate
         })
       });
@@ -1559,7 +1733,7 @@ function App() {
       return;
     }
 
-    if (!currentDraft.valor?.trim()) {
+    if (isRichTextEmpty(currentDraft.valor)) {
       setError("O valor e obrigatorio.");
       return;
     }
@@ -1569,7 +1743,7 @@ function App() {
         method: "POST",
         body: JSON.stringify({
           lideradoId: selectedLideradoId,
-          valor: currentDraft.valor.trim(),
+          valor: sanitizeRichText(currentDraft.valor),
           data: isoDate
         })
       });
@@ -2049,11 +2223,12 @@ function App() {
                         <label>
                           Gostos pessoais {renderInfoIcon("Gostos pessoais", "gostosPessoais")}
                         </label>
-                        <textarea
-                          id="textarea-gostosPessoais"
-                          name="gostosPessoais"
+                        <RichTextEditor
+                          className="field-rich-text"
+                          minHeight={120}
+                          placeholder="Registrar gostos pessoais"
                           value={personalForm.gostosPessoais}
-                          onChange={(event) => setPersonalForm((prev) => ({ ...prev, gostosPessoais: event.target.value }))}
+                          onChange={(nextValue) => setPersonalForm((prev) => ({ ...prev, gostosPessoais: nextValue }))}
                         />
                       </div>
 
@@ -2061,11 +2236,12 @@ function App() {
                         <label>
                           Red Flags {renderInfoIcon("Red Flags", "redFlags")}
                         </label>
-                        <textarea
-                          id="textarea-redFlags"
-                          name="redFlags"
+                        <RichTextEditor
+                          className="field-rich-text"
+                          minHeight={120}
+                          placeholder="Registrar red flags"
                           value={personalForm.redFlags}
-                          onChange={(event) => setPersonalForm((prev) => ({ ...prev, redFlags: event.target.value }))}
+                          onChange={(nextValue) => setPersonalForm((prev) => ({ ...prev, redFlags: nextValue }))}
                         />
                       </div>
                     </div>
@@ -2075,12 +2251,12 @@ function App() {
                         <label>
                           BIO {renderInfoIcon("BIO", "bio")}
                         </label>
-                        <textarea
-                          rows="15"
-                          id="textarea-bio"
-                          name="bio"
+                        <RichTextEditor
+                          className="field-rich-text"
+                          minHeight={260}
+                          placeholder="Registrar bio"
                           value={personalForm.bio}
-                          onChange={(event) => setPersonalForm((prev) => ({ ...prev, bio: event.target.value }))}
+                          onChange={(nextValue) => setPersonalForm((prev) => ({ ...prev, bio: nextValue }))}
                         />
                       </div>
                     </div>
@@ -2118,33 +2294,33 @@ function App() {
                             />
                           </td>
                           <td>
-                            <textarea
-                              rows="2"
+                            <RichTextEditor
+                              minHeight={62}
                               value={oneOnOneDraft.resumo}
-                              onChange={(event) => setOneOnOneDraft((prev) => ({ ...prev, resumo: event.target.value }))}
+                              onChange={(nextValue) => setOneOnOneDraft((prev) => ({ ...prev, resumo: nextValue }))}
                             />
                           </td>
                           <td>
-                            <textarea
-                              rows="2"
+                            <RichTextEditor
+                              minHeight={62}
                               value={oneOnOneDraft.tarefasAcordadas}
-                              onChange={(event) => setOneOnOneDraft((prev) => ({ ...prev, tarefasAcordadas: event.target.value }))}
+                              onChange={(nextValue) => setOneOnOneDraft((prev) => ({ ...prev, tarefasAcordadas: nextValue }))}
                             />
                           </td>
                           <td>
-                            <textarea
-                              rows="2"
+                            <RichTextEditor
+                              minHeight={62}
                               value={oneOnOneDraft.proximosAssuntos}
-                              onChange={(event) => setOneOnOneDraft((prev) => ({ ...prev, proximosAssuntos: event.target.value }))}
+                              onChange={(nextValue) => setOneOnOneDraft((prev) => ({ ...prev, proximosAssuntos: nextValue }))}
                             />
                           </td>
                         </tr>
                         {oneOnOnes.map((item) => (
                           <tr key={`${item.data}-${item.resumo}`}>
                             <td>{toDisplayDate(item.data)}</td>
-                            <td>{item.resumo}</td>
-                            <td>{item.tarefasAcordadas}</td>
-                            <td>{item.proximosAssuntos}</td>
+                            <td><RichTextView value={item.resumo} /></td>
+                            <td><RichTextView value={item.tarefasAcordadas} /></td>
+                            <td><RichTextView value={item.proximosAssuntos} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -2184,17 +2360,17 @@ function App() {
                             />
                           </td>
                           <td>
-                            <textarea
-                              rows="2"
+                            <RichTextEditor
+                              minHeight={62}
                               value={feedbackDraft.conteudo}
-                              onChange={(event) => setFeedbackDraft((prev) => ({ ...prev, conteudo: event.target.value }))}
+                              onChange={(nextValue) => setFeedbackDraft((prev) => ({ ...prev, conteudo: nextValue }))}
                             />
                           </td>
                           <td>
-                            <textarea
-                              rows="2"
+                            <RichTextEditor
+                              minHeight={62}
                               value={feedbackDraft.receptividade}
-                              onChange={(event) => setFeedbackDraft((prev) => ({ ...prev, receptividade: event.target.value }))}
+                              onChange={(nextValue) => setFeedbackDraft((prev) => ({ ...prev, receptividade: nextValue }))}
                             />
                           </td>
                           <td>
@@ -2210,8 +2386,8 @@ function App() {
                         {feedbacks.map((item) => (
                           <tr key={`${item.data}-${item.conteudo}`}>
                             <td>{toDisplayDate(item.data)}</td>
-                            <td>{item.conteudo}</td>
-                            <td>{item.receptividade}</td>
+                            <td><RichTextView value={item.conteudo} /></td>
+                            <td><RichTextView value={item.receptividade} /></td>
                             <td>{item.polaridade}</td>
                           </tr>
                         ))}
@@ -2541,7 +2717,7 @@ function App() {
         className={`tooltip ${hoverTooltip.visible ? "" : "hidden"}`}
         style={{ left: `${hoverTooltip.x}px`, top: `${hoverTooltip.y}px` }}
       >
-        {hoverTooltip.text}
+        <RichTextView value={hoverTooltip.text} className="tooltip-rich-text" />
       </div>
 
       <dialog className={`modal-backdrop ${tooltipModal.open ? "" : "hidden"}`} open={tooltipModal.open}>
@@ -2553,11 +2729,12 @@ function App() {
             <label className="modal-label" htmlFor="tooltipInput">
               Texto do tooltip
             </label>
-            <textarea
-              id="tooltipInput"
-              rows="8"
+            <RichTextEditor
+              className="tooltip-rich-editor"
+              minHeight={220}
+              placeholder="Escreva o tooltip formatado"
               value={tooltipModal.text}
-              onChange={(event) => setTooltipModal((prev) => ({ ...prev, text: event.target.value }))}
+              onChange={(nextValue) => setTooltipModal((prev) => ({ ...prev, text: nextValue }))}
             />
           </div>
           <div className="modal-actions">

@@ -222,7 +222,7 @@ h4 {
   flex-direction: column;
 }
 
-.personal-info-secondary .field textarea {
+.personal-info-secondary .field .field-rich-text {
   flex: 1;
   min-height: 0;
 }
@@ -237,7 +237,7 @@ h4 {
   flex-direction: column;
 }
 
-.personal-info-bio .field-bio textarea {
+.personal-info-bio .field-bio .field-rich-text {
   flex: 1;
   min-height: 260px;
 }
@@ -251,7 +251,6 @@ h4 {
 }
 
 .field input,
-.field textarea,
 .field select {
   margin-top: 4px;
   width: 100%;
@@ -269,8 +268,83 @@ h4 {
   max-width: 100%;
 }
 
-textarea {
+.rich-text-editor {
+  margin-top: 4px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #0b1220;
+  overflow: hidden;
+}
+
+.rich-text-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(2, 6, 23, 0.55);
+}
+
+.rich-text-toolbar .btn.small {
+  min-width: 38px;
+  padding: 4px 8px;
+}
+
+.rich-text-input {
+  color: var(--text);
+  padding: 8px;
+  outline: none;
+  resize: vertical;
+  overflow: auto;
+}
+
+.rich-text-input:empty::before {
+  content: attr(data-placeholder);
+  color: #64748b;
+}
+
+.rich-text-input p,
+.rich-text-input ul,
+.rich-text-input ol,
+.rich-text-input blockquote {
+  margin: 0 0 6px;
+}
+
+.rich-text-input p:last-child,
+.rich-text-input ul:last-child,
+.rich-text-input ol:last-child,
+.rich-text-input blockquote:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-view {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.rich-text-view p,
+.rich-text-view ul,
+.rich-text-view ol,
+.rich-text-view blockquote {
+  margin: 0 0 6px;
+}
+
+.rich-text-view p:last-child,
+.rich-text-view ul:last-child,
+.rich-text-view ol:last-child,
+.rich-text-view blockquote:last-child {
+  margin-bottom: 0;
+}
+
+.plain-textarea {
+  width: 100%;
   min-height: 66px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #0b1220;
+  color: var(--text);
+  padding: 6px 8px;
   resize: vertical;
 }
 
@@ -447,15 +521,8 @@ textarea {
   color: var(--muted);
 }
 
-.modal-body textarea {
-  width: 100%;
-  min-height: 200px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: #0b1220;
-  color: var(--text);
-  padding: 10px;
-  resize: vertical;
+.tooltip-rich-editor .rich-text-input {
+  min-height: 220px;
 }
 
 .modal-actions {
@@ -541,15 +608,27 @@ textarea {
   margin-top: 0;
 }
 
-.history-edit textarea {
-  width: 100%;
-  min-height: 36px;
+.history-edit .rich-text-editor {
+  margin-top: 0;
   border-radius: 6px;
-  border: 1px solid var(--line);
-  background: #0b1220;
-  color: var(--text);
+}
+
+.history-edit .rich-text-input {
+  min-height: 36px;
   padding: 6px 8px;
-  resize: vertical;
+}
+
+.history-edit .rich-text-toolbar {
+  padding: 4px;
+}
+
+.history-edit .rich-text-toolbar .btn.small {
+  padding: 3px 6px;
+  min-width: 32px;
+}
+
+.tooltip-rich-text {
+  white-space: normal;
 }
 
 .history-edit .date-input {
