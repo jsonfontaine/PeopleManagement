@@ -1122,7 +1122,44 @@ function App() {
 
   const summaryMetrics = useMemo(() => {
     const card = dashboardCards.find((item) => String(item.lideradoId) === selectedLideradoId);
+    const latestDisc = discHistorico[0]?.valor || "-";
+    const latestCultureEntry = (cultureEntries || []).reduce((latest, current) => {
+      if (!latest) {
+        return current;
+      }
+
+      const currentDate = Date.parse(`${toIsoDate(current?.data) || current?.data || ""}T00:00:00Z`);
+      const latestDate = Date.parse(`${toIsoDate(latest?.data) || latest?.data || ""}T00:00:00Z`);
+
+      if (Number.isNaN(currentDate)) {
+        return latest;
+      }
+      if (Number.isNaN(latestDate)) {
+        return current;
+      }
+
+      return currentDate > latestDate ? current : latest;
+    }, null);
+
+    const cultureScores = latestCultureEntry
+      ? [
+          latestCultureEntry.aprenderEMelhorarSempre,
+          latestCultureEntry.atitudeDeDono,
+          latestCultureEntry.buscarMelhoresResultadosParaClientes,
+          latestCultureEntry.espiritoDeEquipe,
+          latestCultureEntry.excelencia,
+          latestCultureEntry.fazerAcontecer,
+          latestCultureEntry.inovarParaInspirar
+        ].map((value) => Number(value))
+      : [];
+
+    const hasValidCultureScores = cultureScores.length === 7 && cultureScores.every((value) => Number.isFinite(value));
+    const notaGeralFromCulture = hasValidCultureScores
+      ? Number((cultureScores.reduce((sum, value) => sum + value, 0) / cultureScores.length).toFixed(1))
+      : null;
+
     return {
+      disc: leaderView?.disc || card?.disc || latestDisc,
       perfil: leaderView?.perfil || card?.perfil || "-",
       nineBox: leaderView?.nineBox || card?.nineBox || "-",
       feedbacks: Number.isInteger(leaderView?.quantidadeFeedbacks)
@@ -1131,9 +1168,9 @@ function App() {
       oneOnOnes: Number.isInteger(leaderView?.quantidadeOneOnOnes)
         ? leaderView.quantidadeOneOnOnes
         : card?.quantidadeOneOnOnes || 0,
-      notaGeral: card?.notaGeral ?? "-"
+      notaGeral: notaGeralFromCulture ?? card?.notaGeral ?? "-"
     };
-  }, [dashboardCards, leaderView, selectedLideradoId]);
+  }, [cultureEntries, dashboardCards, discHistorico, leaderView, selectedLideradoId]);
 
   const propertySectionData = useMemo(() => {
     return {
@@ -1151,19 +1188,29 @@ function App() {
 
   const dashboardCardsWithFallbackRadar = useMemo(() => {
     return dashboardCards.map((card) => {
-      const radar = card.ultimaAvaliacaoCultura
+      const cultura = card.ultimaAvaliacaoCultura || null;
+      const radar = cultura
         ? [
-            card.ultimaAvaliacaoCultura.aprenderEMelhorarSempre,
-            card.ultimaAvaliacaoCultura.atitudeDeDono,
-            card.ultimaAvaliacaoCultura.buscarMelhoresResultadosParaClientes,
-            card.ultimaAvaliacaoCultura.espiritoDeEquipe,
-            card.ultimaAvaliacaoCultura.excelencia,
-            card.ultimaAvaliacaoCultura.fazerAcontecer,
-            card.ultimaAvaliacaoCultura.inovarParaInspirar
+            Number(cultura.aprenderEMelhorarSempre),
+            Number(cultura.atitudeDeDono),
+            Number(cultura.buscarMelhoresResultadosParaClientes),
+            Number(cultura.espiritoDeEquipe),
+            Number(cultura.excelencia),
+            Number(cultura.fazerAcontecer),
+            Number(cultura.inovarParaInspirar)
           ]
         : [5, 5, 5, 5, 5, 5, 5];
 
-      return { ...card, radar };
+      const hasValidRadar = radar.length === 7 && radar.every((value) => Number.isFinite(value));
+      const notaGeralFromRadar = hasValidRadar
+        ? Number((radar.reduce((sum, value) => sum + value, 0) / radar.length).toFixed(1))
+        : null;
+
+      return {
+        ...card,
+        radar,
+        notaGeralCalculada: cultura ? notaGeralFromRadar : card.notaGeral ?? null
+      };
     });
   }, [dashboardCards]);
 
@@ -1831,6 +1878,10 @@ function App() {
                   <h3>{card.nome}</h3>
                   <div className="summary">
                     <div className="kpi">
+                      <div className="kpi-label">DISC</div>
+                      <div className="kpi-value">{card.disc || "-"}</div>
+                    </div>
+                    <div className="kpi">
                       <div className="kpi-label">Perfil</div>
                       <div className="kpi-value">{card.perfil || "-"}</div>
                     </div>
@@ -1848,7 +1899,7 @@ function App() {
                     </div>
                     <div className="kpi">
                       <div className="kpi-label">Nota geral</div>
-                      <div className="kpi-value">{card.notaGeral ?? "-"}</div>
+                      <div className="kpi-value">{card.notaGeralCalculada ?? "-"}</div>
                     </div>
                   </div>
                   <h4>Radar Cultural</h4>
@@ -1869,6 +1920,10 @@ function App() {
                 </button>
               </div>
               <div className="summary">
+                <div className="kpi">
+                  <div className="kpi-label">DISC</div>
+                  <div className="kpi-value">{summaryMetrics.disc}</div>
+                </div>
                 <div className="kpi">
                   <div className="kpi-label">Perfil</div>
                   <div className="kpi-value">{summaryMetrics.perfil}</div>

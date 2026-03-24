@@ -21,8 +21,8 @@ public sealed class DashboardServiceTests
         {
             IReadOnlyCollection<DashboardCardProjection> cards =
             [
-                new DashboardCardProjection("2", "Bruno", null, null, 0, 0, null, null),
-                new DashboardCardProjection("1", "Ana", null, null, 0, 0, null, null)
+                new DashboardCardProjection("2", "Bruno", null, null, null, 0, 0, null, null),
+                new DashboardCardProjection("1", "Ana", null, null, null, 0, 0, null, null)
             ];
 
             return Task.FromResult(cards);
