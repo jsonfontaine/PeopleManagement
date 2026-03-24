@@ -5,9 +5,7 @@ namespace PeopleManagement.Infrastructure.Persistence.Entities;
 /// </summary>
 public sealed class FeedbackEntity
 {
-    public string Id { get; set; } = string.Empty;
-
-    public string LideradoId { get; set; } = string.Empty;
+    public string IdLiderado { get; set; } = string.Empty;
 
     public DateOnly Data { get; set; }
 

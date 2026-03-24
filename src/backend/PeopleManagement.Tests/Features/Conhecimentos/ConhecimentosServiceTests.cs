@@ -20,7 +20,7 @@ public sealed class ConhecimentosServiceTests
         var service = new ConhecimentosService(new FakeConhecimentosRepository(existeLiderado: false));
 
         await Assert.ThrowsAsync<RegraNegocioException>(() =>
-            service.SalvarAsync(Guid.NewGuid(), "C#", new DateOnly(2026, 3, 23), CancellationToken.None));
+            service.SalvarAsync(Guid.NewGuid(), "Java", new DateOnly(2026, 3, 23), CancellationToken.None));
     }
 
     private sealed class FakeConhecimentosRepository : IConhecimentosRepository

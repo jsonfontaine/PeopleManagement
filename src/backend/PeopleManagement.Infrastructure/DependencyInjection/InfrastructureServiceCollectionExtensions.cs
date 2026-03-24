@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using AppCultura = PeopleManagement.Application.Features.Cultura;
+using AppFeedbacks = PeopleManagement.Application.Features.Feedbacks;
+using AppOneOnOnes = PeopleManagement.Application.Features.OneOnOnes;
 using PeopleManagement.Application.Common.Storage;
 using PeopleManagement.Application.Features.Ameacas;
 using PeopleManagement.Application.Features.Atitudes;
@@ -20,6 +23,9 @@ using PeopleManagement.Application.Features.Personalidade;
 using PeopleManagement.Application.Features.ProximosPassos;
 using PeopleManagement.Application.Features.SituacaoAtual;
 using PeopleManagement.Application.Features.Valores;
+using InfraCultura = PeopleManagement.Infrastructure.Storage.Cultura;
+using InfraFeedbacks = PeopleManagement.Infrastructure.Storage.Feedbacks;
+using InfraOneOnOnes = PeopleManagement.Infrastructure.Storage.OneOnOnes;
 using PeopleManagement.Infrastructure.Persistence;
 using PeopleManagement.Infrastructure.Storage;
 
@@ -134,6 +140,22 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoAmeacasQuery, bool>, VerificarExistenciaLideradoAmeacasHandler>();
         services.AddScoped<IStorageCommandHandler<SalvarAmeacasCommand, StorageUnit>, SalvarAmeacasHandler>();
         services.AddScoped<IStorageCommandHandler<RemoverAmeacasCommand, StorageUnit>, RemoverAmeacasHandler>();
+
+        services.AddScoped<IStorageCommandHandler<AppCultura.ListarCulturaQuery, IReadOnlyCollection<AppCultura.CulturaRegistro>>, InfraCultura.ListarCulturaFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppCultura.ObterCulturaPorDataQuery, AppCultura.CulturaRegistro?>, InfraCultura.ObterCulturaPorDataFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppCultura.VerificarExistenciaLideradoCulturaQuery, bool>, InfraCultura.VerificarExistenciaLideradoCulturaFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppCultura.SalvarCulturaCommand, StorageUnit>, InfraCultura.SalvarCulturaFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppCultura.RemoverCulturaCommand, StorageUnit>, InfraCultura.RemoverCulturaFeatureHandler>();
+
+        services.AddScoped<IStorageCommandHandler<AppFeedbacks.ListarFeedbacksQuery, IReadOnlyCollection<AppFeedbacks.FeedbacksRegistro>>, InfraFeedbacks.ListarFeedbacksFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppFeedbacks.VerificarExistenciaLideradoFeedbacksQuery, bool>, InfraFeedbacks.VerificarExistenciaLideradoFeedbacksFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppFeedbacks.SalvarFeedbacksCommand, StorageUnit>, InfraFeedbacks.SalvarFeedbacksFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppFeedbacks.RemoverFeedbacksCommand, StorageUnit>, InfraFeedbacks.RemoverFeedbacksFeatureHandler>();
+
+        services.AddScoped<IStorageCommandHandler<AppOneOnOnes.ListarOneOnOnesQuery, IReadOnlyCollection<AppOneOnOnes.OneOnOnesRegistro>>, InfraOneOnOnes.ListarOneOnOnesFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppOneOnOnes.VerificarExistenciaLideradoOneOnOnesQuery, bool>, InfraOneOnOnes.VerificarExistenciaLideradoOneOnOnesFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppOneOnOnes.SalvarOneOnOnesCommand, StorageUnit>, InfraOneOnOnes.SalvarOneOnOnesFeatureHandler>();
+        services.AddScoped<IStorageCommandHandler<AppOneOnOnes.RemoverOneOnOnesCommand, StorageUnit>, InfraOneOnOnes.RemoverOneOnOnesFeatureHandler>();
 
         return services;
     }

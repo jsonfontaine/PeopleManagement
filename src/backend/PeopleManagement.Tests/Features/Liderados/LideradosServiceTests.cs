@@ -30,6 +30,33 @@ public sealed class LideradosServiceTests
         await service.AtualizarClassificacaoPerfilAsync(Guid.NewGuid(), "", "High Performer", new DateOnly(2026, 3, 23), CancellationToken.None);
     }
 
+    [Fact]
+    public async Task CriarFeedbackAsync_DeveLancarExcecao_QuandoPolaridadeForInvalida()
+    {
+        var service = new LideradosService(new FakeLideradosRepository(existeNome: false, existeId: true));
+
+        await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.CriarFeedbackAsync(Guid.NewGuid(), new CriarFeedbackInput(new DateOnly(2026, 3, 24), "Conteudo", "Alta", "Neutra"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CriarOneOnOneAsync_DeveLancarExcecao_QuandoResumoForInvalido()
+    {
+        var service = new LideradosService(new FakeLideradosRepository(existeNome: false, existeId: true));
+
+        await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.CriarOneOnOneAsync(Guid.NewGuid(), new CriarOneOnOneInput(new DateOnly(2026, 3, 24), "   ", "Tarefas", "Proximos"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SalvarCulturaAsync_DeveLancarExcecao_QuandoNotaForInvalida()
+    {
+        var service = new LideradosService(new FakeLideradosRepository(existeNome: false, existeId: true));
+
+        await Assert.ThrowsAsync<RegraNegocioException>(() =>
+            service.SalvarCulturaAsync(Guid.NewGuid(), new RadarCulturalResponse(new DateOnly(2026, 3, 24), 11, 8, 7, 6, 5, 4, 3), CancellationToken.None));
+    }
+
     private sealed class FakeLideradosRepository : ILideradosRepository
     {
         private readonly bool _existeNome;

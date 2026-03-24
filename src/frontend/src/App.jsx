@@ -728,6 +728,9 @@ function App() {
   const oportunidadesDateInputRef = useRef(null);
   const fraquezasDateInputRef = useRef(null);
   const ameacasDateInputRef = useRef(null);
+  const feedbackDateInputRef = useRef(null);
+  const oneOnOneDateInputRef = useRef(null);
+  const culturaDateInputRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -825,10 +828,11 @@ function App() {
       setError("");
 
       try {
-        const [visao, feedbackResponse, oneOnOneResponse, discResponse, personalidadeResponse, nineBoxResponse, conhecimentosResponse, habilidadesResponse, atitudesResponse, valoresResponse, expectativasResponse, metasResponse, situacaoAtualResponse, opcoesResponse, proximosPassosResponse, fortalezasResponse, oportunidadesResponse, fraquezasResponse, ameacasResponse] = await Promise.all([
+        const [visao, feedbackResponse, oneOnOneResponse, culturaResponse, discResponse, personalidadeResponse, nineBoxResponse, conhecimentosResponse, habilidadesResponse, atitudesResponse, valoresResponse, expectativasResponse, metasResponse, situacaoAtualResponse, opcoesResponse, proximosPassosResponse, fortalezasResponse, oportunidadesResponse, fraquezasResponse, ameacasResponse] = await Promise.all([
           requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`),
-          requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`),
-          requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`),
+          requestJson(`/api/feedbacks/${selectedLideradoId}`),
+          requestJson(`/api/one-on-ones/${selectedLideradoId}`),
+          requestJson(`/api/cultura/${selectedLideradoId}`),
           requestJson(`/api/disc/${selectedLideradoId}`),
           requestJson(`/api/personalidade/${selectedLideradoId}`),
           requestJson(`/api/nine-box/${selectedLideradoId}`),
@@ -847,21 +851,14 @@ function App() {
           requestJson(`/api/ameacas/${selectedLideradoId}`)
         ]);
 
-        const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
-        const radarResponses = await Promise.all(
-          datas.map((data) => requestJson(`/api/liderados/${selectedLideradoId}/cultura/radar?data=${data}`))
-        );
-
         if (!active) {
           return;
         }
 
-        const nextCultureEntries = radarResponses.map((item) => item.radar).filter(Boolean);
-
         setLeaderView(visao?.conteudo || null);
         setFeedbacks(feedbackResponse?.registros || []);
         setOneOnOnes(oneOnOneResponse?.registros || []);
-        setCultureEntries(nextCultureEntries);
+        setCultureEntries(culturaResponse?.registros || []);
         setDiscHistorico(discResponse?.registros || []);
         setPersonalidadeHistorico(personalidadeResponse?.registros || []);
         setNineBoxHistorico(nineBoxResponse?.registros || []);
@@ -1033,29 +1030,24 @@ function App() {
         }
 
         if (activeTab === "Feedbacks") {
-          const feedbackResponse = await requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`);
+          const feedbackResponse = await requestJson(`/api/feedbacks/${selectedLideradoId}`);
           if (!active) return;
           setFeedbacks(feedbackResponse?.registros || []);
           return;
         }
 
         if (activeTab === "1:1") {
-          const oneOnOneResponse = await requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`);
+          const oneOnOneResponse = await requestJson(`/api/one-on-ones/${selectedLideradoId}`);
           if (!active) return;
           setOneOnOnes(oneOnOneResponse?.registros || []);
           return;
         }
 
         if (activeTab === "Cultura") {
-          const visao = await requestJson(`/api/liderados/${selectedLideradoId}/visao-individual`);
-          const datas = visao?.conteudo?.datasAvaliacaoCultura || [];
-          const radarResponses = await Promise.all(
-            datas.map((data) => requestJson(`/api/liderados/${selectedLideradoId}/cultura/radar?data=${data}`))
-          );
+          const culturaResponse = await requestJson(`/api/cultura/${selectedLideradoId}`);
           if (!active) return;
 
-          setLeaderView(visao?.conteudo || null);
-          setCultureEntries(radarResponses.map((item) => item.radar).filter(Boolean));
+          setCultureEntries(culturaResponse?.registros || []);
         }
 
       } catch (loadError) {
@@ -1277,20 +1269,45 @@ function App() {
 
   async function handleSaveFeedback() {
     if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const isoDate = toIsoDate(feedbackDraft.data);
+    if (!isoDate) {
+      setError("Informe a data de Feedbacks no formato dd/MM/aaaa (ex.: 27/11/2025).");
+      return;
+    }
+    if (!feedbackDraft.conteudo?.trim()) {
+      setError("O conteudo de Feedbacks e obrigatorio.");
+      return;
+    }
+    if (!feedbackDraft.receptividade?.trim()) {
+      setError("A receptividade de Feedbacks e obrigatoria.");
       return;
     }
 
     try {
-      await requestJson(`/api/liderados/${selectedLideradoId}/feedbacks/`, {
+      await requestJson(`/api/feedbacks`, {
         method: "POST",
         body: JSON.stringify({
-          ...feedbackDraft,
-          data: toIsoDate(feedbackDraft.data)
+          lideradoId: selectedLideradoId,
+          conteudo: feedbackDraft.conteudo.trim(),
+          receptividade: feedbackDraft.receptividade.trim(),
+          polaridade: feedbackDraft.polaridade,
+          data: isoDate
         })
       });
 
+      const response = await requestJson(`/api/feedbacks/${selectedLideradoId}`);
+      setFeedbacks(response?.registros || []);
       setFeedbackDraft({ data: "", conteudo: "", receptividade: "", polaridade: "Positivo" });
-      setLeaderReloadKey((value) => value + 1);
+
+      requestAnimationFrame(() => {
+        feedbackDateInputRef.current?.focus();
+      });
+
+      setError("");
       await refreshCurrentLeader();
     } catch (saveError) {
       setError(saveError.message);
@@ -1299,20 +1316,49 @@ function App() {
 
   async function handleSaveOneOnOne() {
     if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const isoDate = toIsoDate(oneOnOneDraft.data);
+    if (!isoDate) {
+      setError("Informe a data de 1:1 no formato dd/MM/aaaa (ex.: 27/11/2025).");
+      return;
+    }
+    if (!oneOnOneDraft.resumo?.trim()) {
+      setError("O resumo de 1:1 e obrigatorio.");
+      return;
+    }
+    if (!oneOnOneDraft.tarefasAcordadas?.trim()) {
+      setError("As tarefas acordadas de 1:1 sao obrigatorias.");
+      return;
+    }
+    if (!oneOnOneDraft.proximosAssuntos?.trim()) {
+      setError("Os proximos assuntos de 1:1 sao obrigatorios.");
       return;
     }
 
     try {
-      await requestJson(`/api/liderados/${selectedLideradoId}/one-on-ones/`, {
+      await requestJson(`/api/one-on-ones`, {
         method: "POST",
         body: JSON.stringify({
-          ...oneOnOneDraft,
-          data: toIsoDate(oneOnOneDraft.data)
+          lideradoId: selectedLideradoId,
+          resumo: oneOnOneDraft.resumo.trim(),
+          tarefasAcordadas: oneOnOneDraft.tarefasAcordadas.trim(),
+          proximosAssuntos: oneOnOneDraft.proximosAssuntos.trim(),
+          data: isoDate
         })
       });
 
+      const response = await requestJson(`/api/one-on-ones/${selectedLideradoId}`);
+      setOneOnOnes(response?.registros || []);
       setOneOnOneDraft({ data: "", resumo: "", tarefasAcordadas: "", proximosAssuntos: "" });
-      setLeaderReloadKey((value) => value + 1);
+
+      requestAnimationFrame(() => {
+        oneOnOneDateInputRef.current?.focus();
+      });
+
+      setError("");
       await refreshCurrentLeader();
     } catch (saveError) {
       setError(saveError.message);
@@ -1321,14 +1367,22 @@ function App() {
 
   async function handleSaveCultura() {
     if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const isoDate = toIsoDate(cultureDraft.data);
+    if (!isoDate) {
+      setError("Informe a data de Cultura no formato dd/MM/aaaa (ex.: 27/11/2025).");
       return;
     }
 
     try {
-      await requestJson(`/api/liderados/${selectedLideradoId}/cultura/`, {
+      await requestJson(`/api/cultura`, {
         method: "POST",
         body: JSON.stringify({
-          data: toIsoDate(cultureDraft.data),
+          lideradoId: selectedLideradoId,
+          data: isoDate,
           aprenderEMelhorarSempre: Number(cultureDraft.aprenderEMelhorarSempre || 0),
           atitudeDeDono: Number(cultureDraft.atitudeDeDono || 0),
           buscarMelhoresResultadosParaClientes: Number(cultureDraft.buscarMelhoresResultadosParaClientes || 0),
@@ -1338,6 +1392,9 @@ function App() {
           inovarParaInspirar: Number(cultureDraft.inovarParaInspirar || 0)
         })
       });
+
+      const response = await requestJson(`/api/cultura/${selectedLideradoId}`);
+      setCultureEntries(response?.registros || []);
 
       setCultureDraft({
         data: "",
@@ -1349,7 +1406,12 @@ function App() {
         fazerAcontecer: "",
         inovarParaInspirar: ""
       });
-      setLeaderReloadKey((value) => value + 1);
+
+      requestAnimationFrame(() => {
+        culturaDateInputRef.current?.focus();
+      });
+
+      setError("");
       await refreshCurrentLeader();
     } catch (saveError) {
       setError(saveError.message);
@@ -1849,7 +1911,7 @@ function App() {
                   {cultureEntries.length === 0 ? <option value="0">Sem avaliacoes</option> : null}
                   {cultureEntries.map((item, index) => (
                     <option key={item.data} value={index}>
-                      {item.data}
+                      {toDisplayDate(item.data)}
                     </option>
                   ))}
                 </select>
@@ -1995,6 +2057,7 @@ function App() {
                             <MaskedDateInput
                               className="date-input"
                               value={oneOnOneDraft.data}
+                              inputRef={oneOnOneDateInputRef}
                               onChange={(nextValue) => setOneOnOneDraft((prev) => ({ ...prev, data: nextValue }))}
                               ariaLabel="Data do 1:1"
                             />
@@ -2023,7 +2086,7 @@ function App() {
                         </tr>
                         {oneOnOnes.map((item) => (
                           <tr key={`${item.data}-${item.resumo}`}>
-                            <td>{item.data}</td>
+                            <td>{toDisplayDate(item.data)}</td>
                             <td>{item.resumo}</td>
                             <td>{item.tarefasAcordadas}</td>
                             <td>{item.proximosAssuntos}</td>
@@ -2060,6 +2123,7 @@ function App() {
                             <MaskedDateInput
                               className="date-input"
                               value={feedbackDraft.data}
+                              inputRef={feedbackDateInputRef}
                               onChange={(nextValue) => setFeedbackDraft((prev) => ({ ...prev, data: nextValue }))}
                               ariaLabel="Data do feedback"
                             />
@@ -2090,7 +2154,7 @@ function App() {
                         </tr>
                         {feedbacks.map((item) => (
                           <tr key={`${item.data}-${item.conteudo}`}>
-                            <td>{item.data}</td>
+                            <td>{toDisplayDate(item.data)}</td>
                             <td>{item.conteudo}</td>
                             <td>{item.receptividade}</td>
                             <td>{item.polaridade}</td>
@@ -2131,6 +2195,7 @@ function App() {
                             <MaskedDateInput
                               className="date-input"
                               value={cultureDraft.data}
+                              inputRef={culturaDateInputRef}
                               onChange={(nextValue) => setCultureDraft((prev) => ({ ...prev, data: nextValue }))}
                               ariaLabel="Data da avaliacao de cultura"
                             />
@@ -2163,7 +2228,7 @@ function App() {
                         </tr>
                         {cultureEntries.map((item) => (
                           <tr key={item.data}>
-                            <td>{item.data}</td>
+                            <td>{toDisplayDate(item.data)}</td>
                             <td>{item.aprenderEMelhorarSempre}</td>
                             <td>{item.atitudeDeDono}</td>
                             <td>{item.buscarMelhoresResultadosParaClientes}</td>

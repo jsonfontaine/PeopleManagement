@@ -47,8 +47,9 @@ public sealed class PeopleManagementDbContext : DbContext
 
         modelBuilder.Entity<InformacoesPessoaisEntity>(builder =>
         {
-            builder.ToTable("InformacoesPessoais");
-            builder.HasKey(x => x.LideradoId);
+            builder.ToTable("InformacaoPessoal");
+            builder.HasKey(x => x.IdLiderado);
+            builder.Property(x => x.IdLiderado).IsRequired();
             builder.Property(x => x.Nome).IsRequired().HasMaxLength(200);
             builder.Property(x => x.EstadoCivil).HasMaxLength(100);
             builder.Property(x => x.Cargo).HasMaxLength(200);
@@ -57,35 +58,43 @@ public sealed class PeopleManagementDbContext : DbContext
 
         modelBuilder.Entity<FeedbackEntity>(builder =>
         {
-            builder.ToTable("Feedbacks");
-            builder.HasKey(x => x.Id);
+            builder.ToTable("Feedback");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
             builder.Property(x => x.Conteudo).IsRequired();
             builder.Property(x => x.Receptividade).IsRequired().HasMaxLength(100);
             builder.Property(x => x.Polaridade).IsRequired().HasMaxLength(50);
-            builder.HasIndex(x => new { x.LideradoId, x.Data });
+            builder.HasIndex(x => new { x.IdLiderado, x.Data });
         });
 
         modelBuilder.Entity<OneOnOneEntity>(builder =>
         {
-            builder.ToTable("OneOnOnes");
-            builder.HasKey(x => x.Id);
+            builder.ToTable("OneOnOne");
+            builder.HasKey(x => new { x.IdLiderado, x.Data });
+            builder.Property(x => x.IdLiderado).IsRequired();
             builder.Property(x => x.Resumo).IsRequired();
             builder.Property(x => x.TarefasAcordadas).IsRequired();
             builder.Property(x => x.ProximosAssuntos).IsRequired();
-            builder.HasIndex(x => new { x.LideradoId, x.Data });
+            builder.HasIndex(x => new { x.IdLiderado, x.Data });
         });
 
 
         modelBuilder.Entity<CulturaAvaliacaoEntity>(builder =>
         {
-            builder.ToTable("CulturaAvaliacoes");
-            builder.HasKey(x => x.Id);
-            builder.HasIndex(x => new { x.LideradoId, x.Data }).IsUnique();
+            builder.ToTable("CulturaAvaliacao");
+            builder.HasKey(x => new { x.LideradoId, x.Data });
+            // Backward-compatible mapping: existing SQLite schema uses IdLiderado.
+            builder.Property(x => x.LideradoId).IsRequired().HasColumnName("IdLiderado");
+            builder.Property(x => x.Data).IsRequired();
+            builder.HasOne<LideradoEntity>()
+                .WithMany()
+                .HasForeignKey(x => x.LideradoId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<TooltipEntity>(builder =>
         {
-            builder.ToTable("Tooltips");
+            builder.ToTable("Tooltip");
             builder.HasKey(x => x.ChaveCampo);
             builder.Property(x => x.Texto).IsRequired();
         });

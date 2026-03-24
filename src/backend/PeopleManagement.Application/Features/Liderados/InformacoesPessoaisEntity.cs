@@ -5,7 +5,7 @@ namespace PeopleManagement.Application.Features.Liderados;
 /// </summary>
 public sealed class InformacoesPessoaisEntity
 {
-    public string LideradoId { get; set; } = string.Empty;
+    public string IdLiderado { get; set; } = string.Empty;
 
     public string Nome { get; set; } = string.Empty;
 

@@ -2,9 +2,11 @@ using Microsoft.Extensions.DependencyInjection;
 using PeopleManagement.Application.Features.Ameacas;
 using PeopleManagement.Application.Features.Atitudes;
 using PeopleManagement.Application.Features.Conhecimentos;
+using PeopleManagement.Application.Features.Cultura;
 using PeopleManagement.Application.Features.Dashboard;
 using PeopleManagement.Application.Features.Disc;
 using PeopleManagement.Application.Features.Expectativas;
+using PeopleManagement.Application.Features.Feedbacks;
 using PeopleManagement.Application.Features.Fortalezas;
 using PeopleManagement.Application.Features.Fraquezas;
 using PeopleManagement.Application.Features.Habilidades;
@@ -13,6 +15,7 @@ using PeopleManagement.Application.Features.Metas;
 using PeopleManagement.Application.Features.NineBox;
 using PeopleManagement.Application.Features.Opcoes;
 using PeopleManagement.Application.Features.Oportunidades;
+using PeopleManagement.Application.Features.OneOnOnes;
 using PeopleManagement.Application.Features.Personalidade;
 using PeopleManagement.Application.Features.ProximosPassos;
 using PeopleManagement.Application.Features.SituacaoAtual;
@@ -77,6 +80,15 @@ public static class ApplicationServiceCollectionExtensions
 
         services.AddScoped<AmeacasService>();
         services.AddScoped<IAmeacasRepository, AmeacasRepository>();
+
+        services.AddScoped<CulturaService>();
+        services.AddScoped<ICulturaRepository, CulturaRepository>();
+
+        services.AddScoped<FeedbacksService>();
+        services.AddScoped<IFeedbacksRepository, FeedbacksRepository>();
+
+        services.AddScoped<OneOnOnesService>();
+        services.AddScoped<IOneOnOnesRepository, OneOnOnesRepository>();
 
         return services;
     }

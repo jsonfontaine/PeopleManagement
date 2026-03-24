@@ -48,17 +48,85 @@ public sealed class LideradosService
         => _repository.ObterVisaoIndividualAsync(id, cancellationToken);
     public Task<IReadOnlyCollection<FeedbackRegistro>> ListarFeedbacksAsync(Guid id, CancellationToken cancellationToken)
         => _repository.ListarFeedbacksAsync(id, cancellationToken);
-    public Task CriarFeedbackAsync(Guid id, CriarFeedbackInput input, CancellationToken cancellationToken)
-        => _repository.CriarFeedbackAsync(id, input, cancellationToken);
+    public async Task CriarFeedbackAsync(Guid id, CriarFeedbackInput input, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(input.Conteudo))
+        {
+            throw new RegraNegocioException("O conteudo de Feedbacks e obrigatorio.");
+        }
+        if (string.IsNullOrWhiteSpace(input.Receptividade))
+        {
+            throw new RegraNegocioException("A receptividade de Feedbacks e obrigatoria.");
+        }
+        if (string.IsNullOrWhiteSpace(input.Polaridade))
+        {
+            throw new RegraNegocioException("A polaridade de Feedbacks e obrigatoria.");
+        }
+        var polaridade = new[] { "Positivo", "Negativo" }
+            .FirstOrDefault(x => x.Equals(input.Polaridade.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (polaridade is null)
+        {
+            throw new RegraNegocioException("A polaridade de Feedbacks deve ser Positivo ou Negativo.");
+        }
+        if (!await _repository.ExistePorIdAsync(id, cancellationToken))
+        {
+            throw new RegraNegocioException("Liderado nao encontrado para registro de Feedbacks.");
+        }
+        await _repository.CriarFeedbackAsync(id, input with
+        {
+            Conteudo = input.Conteudo.Trim(),
+            Receptividade = input.Receptividade.Trim(),
+            Polaridade = polaridade
+        }, cancellationToken);
+    }
     public Task<IReadOnlyCollection<OneOnOneRegistro>> ListarOneOnOnesAsync(Guid id, CancellationToken cancellationToken)
         => _repository.ListarOneOnOnesAsync(id, cancellationToken);
-    public Task CriarOneOnOneAsync(Guid id, CriarOneOnOneInput input, CancellationToken cancellationToken)
-        => _repository.CriarOneOnOneAsync(id, input, cancellationToken);
+    public async Task CriarOneOnOneAsync(Guid id, CriarOneOnOneInput input, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(input.Resumo))
+        {
+            throw new RegraNegocioException("O resumo de 1:1 e obrigatorio.");
+        }
+        if (string.IsNullOrWhiteSpace(input.TarefasAcordadas))
+        {
+            throw new RegraNegocioException("As tarefas acordadas de 1:1 sao obrigatorias.");
+        }
+        if (string.IsNullOrWhiteSpace(input.ProximosAssuntos))
+        {
+            throw new RegraNegocioException("Os proximos assuntos de 1:1 sao obrigatorios.");
+        }
+        if (!await _repository.ExistePorIdAsync(id, cancellationToken))
+        {
+            throw new RegraNegocioException("Liderado nao encontrado para registro de 1:1.");
+        }
+        await _repository.CriarOneOnOneAsync(id, input with
+        {
+            Resumo = input.Resumo.Trim(),
+            TarefasAcordadas = input.TarefasAcordadas.Trim(),
+            ProximosAssuntos = input.ProximosAssuntos.Trim()
+        }, cancellationToken);
+    }
     public async Task SalvarCulturaAsync(Guid id, RadarCulturalResponse radar, CancellationToken cancellationToken)
     {
         if (!await _repository.ExistePorIdAsync(id, cancellationToken))
         {
             throw new RegraNegocioException("Liderado nao encontrado.");
+        }
+        foreach (var nota in new[]
+        {
+            radar.AprenderEMelhorarSempre,
+            radar.AtitudeDeDono,
+            radar.BuscarMelhoresResultadosParaClientes,
+            radar.EspiritoDeEquipe,
+            radar.Excelencia,
+            radar.FazerAcontecer,
+            radar.InovarParaInspirar
+        })
+        {
+            if (nota < 0 || nota > 10)
+            {
+                throw new RegraNegocioException("Os valores de Cultura devem estar entre 0 e 10.");
+            }
         }
         await _repository.SalvarCulturaAsync(id, radar, cancellationToken);
     }
