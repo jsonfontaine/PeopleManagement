@@ -50,6 +50,7 @@ h4 {
 
 .layout {
   padding: 20px;
+    max-height: 750px;
 }
 
 .breadcrumb {
@@ -89,6 +90,7 @@ h4 {
   display: grid;
   grid-template-columns: 340px 1fr;
   gap: 16px;
+  height: 750px;
 }
 
 .right-column {
@@ -96,6 +98,21 @@ h4 {
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  height: 100%;
+  max-height: 750px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.right-column .tabs-content {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.right-column .tabs-content > .section {
+  max-height: 100%;
 }
 
 .panel {
@@ -200,6 +217,7 @@ h4 {
   display: grid !important;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
+  min-height: 0;
 }
 
 .personal-info-column {
@@ -210,6 +228,7 @@ h4 {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .personal-info-secondary {
@@ -235,11 +254,19 @@ h4 {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .personal-info-bio .field-bio .field-rich-text {
   flex: 1;
-  min-height: 260px;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.personal-info-bio .field-bio .field-rich-text .rich-text-input {
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .field label {
@@ -271,6 +298,7 @@ h4 {
 .rich-text-editor {
   margin-top: 4px;
   width: 100%;
+  min-height: 95px;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: #0b1220;
@@ -375,6 +403,10 @@ h4 {
 }
 
 .fields--prop-tabs {
+  display: block !important;
+}
+
+.fields--table {
   display: block !important;
 }
 
@@ -608,6 +640,24 @@ h4 {
   margin-top: 0;
 }
 
+.tabs-content .section.single-column {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs-content .section.single-column .fields {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tabs-content .section.single-column .fields.personal-info-grid {
+  overflow: visible;
+}
+
 .history-edit .rich-text-editor {
   margin-top: 0;
   border-radius: 6px;
@@ -629,6 +679,22 @@ h4 {
 
 .tooltip-rich-text {
   white-space: normal;
+}
+
+.field-rich-text {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.field-rich-text .rich-text-input {
+  overflow-y: auto;
+  max-height: 260px;
+}
+
+.danger-outline {
+  border-color: #dc2626 !important;
+  color: #fecaca !important;
 }
 
 .history-edit .date-input {
@@ -657,8 +723,79 @@ h4 {
 }
 
 .culture-table {
-  table-layout: auto;
-  min-width: 980px;
+  min-width: 1080px;
+}
+
+.feedback-table th,
+.feedback-table td,
+.culture-table th,
+.culture-table td {
+  padding: 6px;
+  height: auto;
+  vertical-align: top;
+}
+
+.feedback-table tr,
+.culture-table tr {
+  height: auto;
+}
+
+.feedback-table .rich-text-view p,
+.feedback-table .rich-text-view ul,
+.feedback-table .rich-text-view ol,
+.feedback-table .rich-text-view blockquote,
+.culture-table .rich-text-view p,
+.culture-table .rich-text-view ul,
+.culture-table .rich-text-view ol,
+.culture-table .rich-text-view blockquote {
+  margin: 0;
+}
+
+.feedback-table .history-edit .rich-text-input {
+  min-height: 24px;
+  height: auto;
+  padding: 4px 6px;
+  overflow: visible;
+}
+
+.feedback-table .history-edit .rich-text-toolbar {
+  gap: 4px;
+  padding: 3px;
+}
+
+.feedback-table .history-edit .rich-text-toolbar .btn.small {
+  min-width: 28px;
+  padding: 2px 5px;
+}
+
+.feedback-table .history-edit .feedback-rich-editor {
+  resize: vertical;
+  overflow: auto;
+  min-height: 95px;
+  display: flex;
+  flex-direction: column;
+}
+
+.feedback-table .history-edit .feedback-rich-editor .rich-text-input {
+  flex: 1;
+  min-height: 95px;
+}
+
+.culture-table .history-edit .score-input,
+.culture-table .history-edit .date-input {
+  padding: 4px 6px;
+}
+
+.culture-table .col-score {
+  min-width: 120px;
+}
+
+.culture-table .col-actions,
+.culture-table td.col-actions {
+  width: 96px;
+  min-width: 96px;
+  max-width: 96px;
+  text-align: center;
 }
 
 .history-edit .score-input {

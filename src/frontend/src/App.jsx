@@ -237,9 +237,20 @@ function isRichTextEmpty(value) {
   return !richTextToPlainText(value);
 }
 
-function RichTextEditor({ value, onChange, placeholder = "", className = "", minHeight = 66 }) {
+function RichTextEditor({ value, onChange, placeholder = "", className = "", minHeight = 95 }) {
   const editorRef = useRef(null);
   const normalizedValue = useMemo(() => normalizeRichTextValue(value), [value]);
+  const effectiveMinHeight = Math.max(95, Number(minHeight) || 95);
+
+  function adjustEditorHeight() {
+    if (!editorRef.current) {
+      return;
+    }
+
+    editorRef.current.style.minHeight = `${effectiveMinHeight}px`;
+    editorRef.current.style.height = "auto";
+    editorRef.current.style.height = `${Math.max(effectiveMinHeight, editorRef.current.scrollHeight)}px`;
+  }
 
   useEffect(() => {
     if (!editorRef.current) {
@@ -249,9 +260,12 @@ function RichTextEditor({ value, onChange, placeholder = "", className = "", min
     if (editorRef.current.innerHTML !== normalizedValue) {
       editorRef.current.innerHTML = normalizedValue;
     }
-  }, [normalizedValue]);
+
+    adjustEditorHeight();
+  }, [normalizedValue, effectiveMinHeight]);
 
   function updateValue() {
+    adjustEditorHeight();
     const html = sanitizeRichText(editorRef.current?.innerHTML || "");
     onChange?.(html);
   }
@@ -290,7 +304,7 @@ function RichTextEditor({ value, onChange, placeholder = "", className = "", min
         contentEditable
         suppressContentEditableWarning
         data-placeholder={placeholder}
-        style={{ minHeight }}
+        style={{ minHeight: effectiveMinHeight }}
         onInput={updateValue}
         onBlur={updateValue}
       />
@@ -424,7 +438,7 @@ function MaskedDateInput({ value, onChange, className = "", placeholder = "dd/MM
   );
 }
 
-function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, onDraftChange, onSaveColumn, dateInputRefs }) {
+function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificacaoPerfilDraft, onDraftChange, onSaveColumn, onDeleteColumn, dateInputRefs }) {
   return (
     <div className="classification-columns">
       {groups.map((group) => {
@@ -442,6 +456,7 @@ function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificac
                 <tr>
                   <th className="col-date" style={{ width: "150px", minWidth: "150px", maxWidth: "150px" }}>Data</th>
                   <th className="col-value">Registro</th>
+                  <th style={{ width: "96px", minWidth: "96px", maxWidth: "96px" }}>Acoes</th>
                 </tr>
               </thead>
               <tbody>
@@ -468,21 +483,31 @@ function ClassificacaoPerfilColumnsSection({ groups, renderInfoIcon, classificac
                       onChange={(event) => onDraftChange(group.tooltipKey, "valor", event.target.value)}
                     />
                   </td>
+                  <td className="col-actions">
+                    <button type="button" className="btn ghost small" onClick={() => onSaveColumn(group.tooltipKey)}>
+                      Salvar
+                    </button>
+                  </td>
                 </tr>
                 {group.rows.map((row) => (
                   <tr key={`${row.data}-${row.valor}`}>
                     <td>{row.data}</td>
                     <td>{richTextToPlainText(row.valor) || row.valor}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn ghost small danger-outline"
+                        onClick={() => onDeleteColumn?.(group.tooltipKey, row.data)}
+                      >
+                        Excluir
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="classification-column-actions">
-              <button type="button" className="btn ghost small" onClick={() => onSaveColumn(group.tooltipKey)}>
-                Salvar
-              </button>
-            </div>
+            {/* Salvar movido para a coluna Acoes da linha editavel */}
           </article>
         );
       })}
@@ -535,6 +560,7 @@ function HistoricalPropertyTabsSection({ sections, renderInfoIcon, initialActive
                 <th className="col-value">
                   {section.label} {renderInfoIcon(section.label, section.tooltipKey)}
                 </th>
+                <th style={{ width: "96px", minWidth: "96px", maxWidth: "96px" }}>Acoes</th>
               </tr>
             </thead>
             <tbody>
@@ -556,21 +582,31 @@ function HistoricalPropertyTabsSection({ sections, renderInfoIcon, initialActive
                     onChange={(nextValue) => section.onDraftChange("valor", nextValue)}
                   />
                 </td>
+                <td className="col-actions">
+                  <button type="button" className="btn ghost small" onClick={section.onSave}>
+                    Salvar
+                  </button>
+                </td>
               </tr>
               {(section.historico || []).map((row) => (
                 <tr key={`${row.data}-${row.valor}`}>
                   <td>{row.data}</td>
                   <td><RichTextView value={row.valor} /></td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn ghost small danger-outline"
+                      onClick={() => section.onDelete?.(row.data)}
+                    >
+                      Excluir
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="classification-column-actions">
-            <button type="button" className="btn ghost small" onClick={section.onSave}>
-              Salvar
-            </button>
-          </div>
+          {/* Salvar movido para a coluna Acoes da linha editavel */}
         </div>
       ))}
     </div>
@@ -582,26 +618,31 @@ function ChaveSection({
   conhecimentosDraft,
   onConhecimentosDraftChange,
   onSaveConhecimentos,
+  onDeleteConhecimentos,
   conhecimentosDateInputRef,
   habilidadesHistorico,
   habilidadesDraft,
   onHabilidadesDraftChange,
   onSaveHabilidades,
+  onDeleteHabilidades,
   habilidadesDateInputRef,
   atitudesHistorico,
   atitudesDraft,
   onAtitudesDraftChange,
   onSaveAtitudes,
+  onDeleteAtitudes,
   atitudesDateInputRef,
   valoresHistorico,
   valoresDraft,
   onValoresDraftChange,
   onSaveValores,
+  onDeleteValores,
   valoresDateInputRef,
   expectativasHistorico,
   expectativasDraft,
   onExpectativasDraftChange,
   onSaveExpectativas,
+  onDeleteExpectativas,
   expectativasDateInputRef,
   renderInfoIcon
 }) {
@@ -614,6 +655,7 @@ function ChaveSection({
       draft: conhecimentosDraft,
       onDraftChange: onConhecimentosDraftChange,
       onSave: onSaveConhecimentos,
+      onDelete: onDeleteConhecimentos,
       dateInputRef: conhecimentosDateInputRef
     },
     {
@@ -624,6 +666,7 @@ function ChaveSection({
       draft: habilidadesDraft,
       onDraftChange: onHabilidadesDraftChange,
       onSave: onSaveHabilidades,
+      onDelete: onDeleteHabilidades,
       dateInputRef: habilidadesDateInputRef
     },
     {
@@ -634,6 +677,7 @@ function ChaveSection({
       draft: atitudesDraft,
       onDraftChange: onAtitudesDraftChange,
       onSave: onSaveAtitudes,
+      onDelete: onDeleteAtitudes,
       dateInputRef: atitudesDateInputRef
     },
     {
@@ -644,6 +688,7 @@ function ChaveSection({
       draft: valoresDraft,
       onDraftChange: onValoresDraftChange,
       onSave: onSaveValores,
+      onDelete: onDeleteValores,
       dateInputRef: valoresDateInputRef
     },
     {
@@ -654,6 +699,7 @@ function ChaveSection({
       draft: expectativasDraft,
       onDraftChange: onExpectativasDraftChange,
       onSave: onSaveExpectativas,
+      onDelete: onDeleteExpectativas,
       dateInputRef: expectativasDateInputRef
     }
   ];
@@ -666,21 +712,25 @@ function GrowPdiSection({
   metasDraft,
   onMetasDraftChange,
   onSaveMetas,
+  onDeleteMetas,
   metasDateInputRef,
   situacaoAtualHistorico,
   situacaoAtualDraft,
   onSituacaoAtualDraftChange,
   onSaveSituacaoAtual,
+  onDeleteSituacaoAtual,
   situacaoAtualDateInputRef,
   opcoesHistorico,
   opcoesDraft,
   onOpcoesDraftChange,
   onSaveOpcoes,
+  onDeleteOpcoes,
   opcoesDateInputRef,
   proximosPassosHistorico,
   proximosPassosDraft,
   onProximosPassosDraftChange,
   onSaveProximosPassos,
+  onDeleteProximosPassos,
   proximosPassosDateInputRef,
   renderInfoIcon
 }) {
@@ -693,6 +743,7 @@ function GrowPdiSection({
       draft: metasDraft,
       onDraftChange: onMetasDraftChange,
       onSave: onSaveMetas,
+      onDelete: onDeleteMetas,
       dateInputRef: metasDateInputRef
     },
     {
@@ -703,6 +754,7 @@ function GrowPdiSection({
       draft: situacaoAtualDraft,
       onDraftChange: onSituacaoAtualDraftChange,
       onSave: onSaveSituacaoAtual,
+      onDelete: onDeleteSituacaoAtual,
       dateInputRef: situacaoAtualDateInputRef
     },
     {
@@ -713,6 +765,7 @@ function GrowPdiSection({
       draft: opcoesDraft,
       onDraftChange: onOpcoesDraftChange,
       onSave: onSaveOpcoes,
+      onDelete: onDeleteOpcoes,
       dateInputRef: opcoesDateInputRef
     },
     {
@@ -723,6 +776,7 @@ function GrowPdiSection({
       draft: proximosPassosDraft,
       onDraftChange: onProximosPassosDraftChange,
       onSave: onSaveProximosPassos,
+      onDelete: onDeleteProximosPassos,
       dateInputRef: proximosPassosDateInputRef
     }
   ];
@@ -735,21 +789,25 @@ function SwotSection({
   fortalezasDraft,
   onFortalezasDraftChange,
   onSaveFortalezas,
+  onDeleteFortalezas,
   fortalezasDateInputRef,
   oportunidadesHistorico,
   oportunidadesDraft,
   onOportunidadesDraftChange,
   onSaveOportunidades,
+  onDeleteOportunidades,
   oportunidadesDateInputRef,
   fraquezasHistorico,
   fraquezasDraft,
   onFraquezasDraftChange,
   onSaveFraquezas,
+  onDeleteFraquezas,
   fraquezasDateInputRef,
   ameacasHistorico,
   ameacasDraft,
   onAmeacasDraftChange,
   onSaveAmeacas,
+  onDeleteAmeacas,
   ameacasDateInputRef,
   renderInfoIcon
 }) {
@@ -762,6 +820,7 @@ function SwotSection({
       draft: fortalezasDraft,
       onDraftChange: onFortalezasDraftChange,
       onSave: onSaveFortalezas,
+      onDelete: onDeleteFortalezas,
       dateInputRef: fortalezasDateInputRef
     },
     {
@@ -772,6 +831,7 @@ function SwotSection({
       draft: oportunidadesDraft,
       onDraftChange: onOportunidadesDraftChange,
       onSave: onSaveOportunidades,
+      onDelete: onDeleteOportunidades,
       dateInputRef: oportunidadesDateInputRef
     },
     {
@@ -782,6 +842,7 @@ function SwotSection({
       draft: fraquezasDraft,
       onDraftChange: onFraquezasDraftChange,
       onSave: onSaveFraquezas,
+      onDelete: onDeleteFraquezas,
       dateInputRef: fraquezasDateInputRef
     },
     {
@@ -792,6 +853,7 @@ function SwotSection({
       draft: ameacasDraft,
       onDraftChange: onAmeacasDraftChange,
       onSave: onSaveAmeacas,
+      onDelete: onDeleteAmeacas,
       dateInputRef: ameacasDateInputRef
     }
   ];
@@ -1720,6 +1782,63 @@ function App() {
     }
   }
 
+  async function handleDeleteClassificacaoPerfilByTipo(tipo, data) {
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const isoDate = toIsoDate(data);
+    if (!isoDate) {
+      setError("Nao consegui entender a data para exclusao.");
+      return;
+    }
+
+    const labelByKey = {
+      disc: "DISC",
+      personalidade: "Personalidade",
+      nineBox: "Nine Box"
+    };
+
+    const confirmed = window.confirm(`Excluir registro de ${labelByKey[tipo]} da data ${toDisplayDate(isoDate)}?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const endpointByKey = {
+        disc: "/api/disc",
+        personalidade: "/api/personalidade",
+        nineBox: "/api/nine-box"
+      };
+
+      await requestJson(endpointByKey[tipo], {
+        method: "DELETE",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          data: isoDate
+        })
+      });
+
+      if (tipo === "disc") {
+        const response = await requestJson(`/api/disc/${selectedLideradoId}`);
+        setDiscHistorico(response?.registros || []);
+      } else if (tipo === "personalidade") {
+        const response = await requestJson(`/api/personalidade/${selectedLideradoId}`);
+        setPersonalidadeHistorico(response?.registros || []);
+      } else if (tipo === "nineBox") {
+        const response = await requestJson(`/api/nine-box/${selectedLideradoId}`);
+        setNineBoxHistorico(response?.registros || []);
+      }
+
+      setLeaderReloadKey((value) => value + 1);
+      await refreshCurrentLeader();
+      setError("");
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
   async function saveHistoricalEntry({ draft, endpoint, label, setHistorico, setDraft, dateInputRef }) {
     if (!selectedLideradoId) {
       setError("Nenhum liderado selecionado.");
@@ -1761,6 +1880,106 @@ function App() {
     } catch (e) {
       setError(e.message);
     }
+  }
+
+  async function deleteHistoricalEntry({ endpoint, label, data, setHistorico }) {
+    if (!selectedLideradoId) {
+      setError("Nenhum liderado selecionado.");
+      return;
+    }
+
+    const isoDate = toIsoDate(data);
+    if (!isoDate) {
+      setError("Nao consegui entender a data para exclusao.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Excluir registro de ${label} da data ${toDisplayDate(isoDate)}?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await requestJson(endpoint, {
+        method: "DELETE",
+        body: JSON.stringify({
+          lideradoId: selectedLideradoId,
+          data: isoDate
+        })
+      });
+
+      const response = await requestJson(`${endpoint}/${selectedLideradoId}`);
+      setHistorico(response?.registros || []);
+      setLeaderReloadKey((value) => value + 1);
+      await refreshCurrentLeader();
+      setError("");
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleDeleteFeedback(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/feedbacks", label: "Feedbacks", data, setHistorico: setFeedbacks });
+  }
+
+  async function handleDeleteOneOnOne(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/one-on-ones", label: "1:1", data, setHistorico: setOneOnOnes });
+  }
+
+  async function handleDeleteCultura(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/cultura", label: "Cultura", data, setHistorico: setCultureEntries });
+  }
+
+  async function handleDeleteConhecimentos(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/conhecimentos", label: "Conhecimentos", data, setHistorico: setConhecimentosHistorico });
+  }
+
+  async function handleDeleteHabilidades(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/habilidades", label: "Habilidades", data, setHistorico: setHabilidadesHistorico });
+  }
+
+  async function handleDeleteAtitudes(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/atitudes", label: "Atitudes", data, setHistorico: setAtitudesHistorico });
+  }
+
+  async function handleDeleteValores(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/valores", label: "Valores", data, setHistorico: setValoresHistorico });
+  }
+
+  async function handleDeleteExpectativas(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/expectativas", label: "Expectativas", data, setHistorico: setExpectativasHistorico });
+  }
+
+  async function handleDeleteMetas(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/metas", label: "Metas", data, setHistorico: setMetasHistorico });
+  }
+
+  async function handleDeleteSituacaoAtual(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/situacao-atual", label: "Situacao Atual", data, setHistorico: setSituacaoAtualHistorico });
+  }
+
+  async function handleDeleteOpcoes(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/opcoes", label: "Opcoes", data, setHistorico: setOpcoesHistorico });
+  }
+
+  async function handleDeleteProximosPassos(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/proximos-passos", label: "Proximos Passos", data, setHistorico: setProximosPassosHistorico });
+  }
+
+  async function handleDeleteFortalezas(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/fortalezas", label: "Fortalezas", data, setHistorico: setFortalezasHistorico });
+  }
+
+  async function handleDeleteOportunidades(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/oportunidades", label: "Oportunidades", data, setHistorico: setOportunidadesHistorico });
+  }
+
+  async function handleDeleteFraquezas(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/fraquezas", label: "Fraquezas", data, setHistorico: setFraquezasHistorico });
+  }
+
+  async function handleDeleteAmeacas(data) {
+    await deleteHistoricalEntry({ endpoint: "/api/ameacas", label: "Ameacas", data, setHistorico: setAmeacasHistorico });
   }
 
   async function handleSaveConhecimentos() {
@@ -2268,11 +2487,8 @@ function App() {
                 <section className="panel section single-column">
                   <div className="panel-header">
                     <h3 className="section-title">1:1</h3>
-                    <button type="button" className="btn ghost small" onClick={handleSaveOneOnOne}>
-                      Salvar
-                    </button>
                   </div>
-                  <div className="fields">
+                  <div className="fields fields--table">
                     <table className="history-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                       <thead>
                         <tr>
@@ -2280,6 +2496,7 @@ function App() {
                           <th>Resumo</th>
                           <th>Tarefas acordadas</th>
                           <th>Proximos assuntos</th>
+                          <th style={{ width: '96px', minWidth: '96px', maxWidth: '96px' }}>Acoes</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2314,6 +2531,11 @@ function App() {
                               onChange={(nextValue) => setOneOnOneDraft((prev) => ({ ...prev, proximosAssuntos: nextValue }))}
                             />
                           </td>
+                          <td className="col-actions">
+                            <button type="button" className="btn ghost small" onClick={handleSaveOneOnOne}>
+                              Salvar
+                            </button>
+                          </td>
                         </tr>
                         {oneOnOnes.map((item) => (
                           <tr key={`${item.data}-${item.resumo}`}>
@@ -2321,6 +2543,11 @@ function App() {
                             <td><RichTextView value={item.resumo} /></td>
                             <td><RichTextView value={item.tarefasAcordadas} /></td>
                             <td><RichTextView value={item.proximosAssuntos} /></td>
+                            <td>
+                              <button type="button" className="btn ghost small danger-outline" onClick={() => handleDeleteOneOnOne(item.data)}>
+                                Excluir
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2333,12 +2560,9 @@ function App() {
                 <section className="panel section single-column">
                   <div className="panel-header">
                     <h3 className="section-title">Feedbacks</h3>
-                    <button type="button" className="btn ghost small" onClick={handleSaveFeedback}>
-                      Salvar
-                    </button>
                   </div>
 
-                  <div className="fields">
+                  <div className="fields fields--table">
                     <table className="history-table feedback-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                       <thead>
                         <tr>
@@ -2346,6 +2570,7 @@ function App() {
                           <th>Conteudo do feedback</th>
                           <th>Receptividade</th>
                           <th>Polaridade</th>
+                          <th style={{ width: '96px', minWidth: '96px', maxWidth: '96px' }}>Acoes</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2361,6 +2586,7 @@ function App() {
                           </td>
                           <td>
                             <RichTextEditor
+                              className="feedback-rich-editor"
                               minHeight={62}
                               value={feedbackDraft.conteudo}
                               onChange={(nextValue) => setFeedbackDraft((prev) => ({ ...prev, conteudo: nextValue }))}
@@ -2368,6 +2594,7 @@ function App() {
                           </td>
                           <td>
                             <RichTextEditor
+                              className="feedback-rich-editor"
                               minHeight={62}
                               value={feedbackDraft.receptividade}
                               onChange={(nextValue) => setFeedbackDraft((prev) => ({ ...prev, receptividade: nextValue }))}
@@ -2382,6 +2609,11 @@ function App() {
                               <option value="Negativo">Negativo</option>
                             </select>
                           </td>
+                          <td className="col-actions">
+                            <button type="button" className="btn ghost small" onClick={handleSaveFeedback}>
+                              Salvar
+                            </button>
+                          </td>
                         </tr>
                         {feedbacks.map((item) => (
                           <tr key={`${item.data}-${item.conteudo}`}>
@@ -2389,6 +2621,11 @@ function App() {
                             <td><RichTextView value={item.conteudo} /></td>
                             <td><RichTextView value={item.receptividade} /></td>
                             <td>{item.polaridade}</td>
+                            <td>
+                              <button type="button" className="btn ghost small danger-outline" onClick={() => handleDeleteFeedback(item.data)}>
+                                Excluir
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2401,23 +2638,21 @@ function App() {
                 <section className="panel section single-column">
                   <div className="panel-header">
                     <h3 className="section-title">Cultura</h3>
-                    <button type="button" className="btn ghost small" onClick={handleSaveCultura}>
-                      Salvar
-                    </button>
                   </div>
 
-                  <div className="fields table-scroll">
-                    <table className="history-table culture-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                  <div className="fields fields--table table-scroll">
+                    <table className="history-table classification-table culture-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                       <thead>
                         <tr>
-                          <th style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>Data</th>
-                          <th>Aprender e Melhorar Sempre</th>
-                          <th>Atitude de Dono</th>
-                          <th>Buscar os melhores resultados para os clientes</th>
-                          <th>Espirito de Equipe</th>
-                          <th>Excelencia</th>
-                          <th>Fazer Acontecer</th>
-                          <th>Inovar para Inspirar</th>
+                          <th className="col-date" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>Data</th>
+                          <th className="col-score">Aprender e Melhorar Sempre</th>
+                          <th className="col-score">Atitude de Dono</th>
+                          <th className="col-score">Buscar os melhores resultados para os clientes</th>
+                          <th className="col-score">Espirito de Equipe</th>
+                          <th className="col-score">Excelencia</th>
+                          <th className="col-score">Fazer Acontecer</th>
+                          <th className="col-score">Inovar para Inspirar</th>
+                          <th className="col-actions" style={{ width: '96px', minWidth: '96px', maxWidth: '96px' }}>Acoes</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2456,6 +2691,11 @@ function App() {
                               />
                             </td>
                           ))}
+                          <td className="col-actions">
+                            <button type="button" className="btn ghost small" onClick={handleSaveCultura}>
+                              Salvar
+                            </button>
+                          </td>
                         </tr>
                         {cultureEntries.map((item) => (
                           <tr key={item.data}>
@@ -2467,6 +2707,11 @@ function App() {
                             <td>{item.excelencia}</td>
                             <td>{item.fazerAcontecer}</td>
                             <td>{item.inovarParaInspirar}</td>
+                            <td className="col-actions">
+                              <button type="button" className="btn ghost small danger-outline" onClick={() => handleDeleteCultura(item.data)}>
+                                Excluir
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2494,6 +2739,7 @@ function App() {
                         }))
                       }
                       onSaveColumn={handleSaveClassificacaoPerfilByTipo}
+                      onDeleteColumn={handleDeleteClassificacaoPerfilByTipo}
                       dateInputRefs={classificacaoDataInputRefs}
                     />
                   </div>
@@ -2519,6 +2765,7 @@ function App() {
                         }))
                       }
                       onSaveConhecimentos={handleSaveConhecimentos}
+                      onDeleteConhecimentos={handleDeleteConhecimentos}
                       conhecimentosDateInputRef={conhecimentosDateInputRef}
                       habilidadesHistorico={(habilidadesHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2532,6 +2779,7 @@ function App() {
                         }))
                       }
                       onSaveHabilidades={handleSaveHabilidades}
+                      onDeleteHabilidades={handleDeleteHabilidades}
                       habilidadesDateInputRef={habilidadesDateInputRef}
                       atitudesHistorico={(atitudesHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2545,6 +2793,7 @@ function App() {
                         }))
                       }
                       onSaveAtitudes={handleSaveAtitudes}
+                      onDeleteAtitudes={handleDeleteAtitudes}
                       atitudesDateInputRef={atitudesDateInputRef}
                       valoresHistorico={(valoresHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2558,6 +2807,7 @@ function App() {
                         }))
                       }
                       onSaveValores={handleSaveValores}
+                      onDeleteValores={handleDeleteValores}
                       valoresDateInputRef={valoresDateInputRef}
                       expectativasHistorico={(expectativasHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2571,6 +2821,7 @@ function App() {
                         }))
                       }
                       onSaveExpectativas={handleSaveExpectativas}
+                      onDeleteExpectativas={handleDeleteExpectativas}
                       expectativasDateInputRef={expectativasDateInputRef}
                       renderInfoIcon={renderInfoIcon}
                     />
@@ -2597,6 +2848,7 @@ function App() {
                         }))
                       }
                       onSaveMetas={handleSaveMetas}
+                      onDeleteMetas={handleDeleteMetas}
                       metasDateInputRef={metasDateInputRef}
                       situacaoAtualHistorico={(situacaoAtualHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2610,6 +2862,7 @@ function App() {
                         }))
                       }
                       onSaveSituacaoAtual={handleSaveSituacaoAtual}
+                      onDeleteSituacaoAtual={handleDeleteSituacaoAtual}
                       situacaoAtualDateInputRef={situacaoAtualDateInputRef}
                       opcoesHistorico={(opcoesHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2623,6 +2876,7 @@ function App() {
                         }))
                       }
                       onSaveOpcoes={handleSaveOpcoes}
+                      onDeleteOpcoes={handleDeleteOpcoes}
                       opcoesDateInputRef={opcoesDateInputRef}
                       proximosPassosHistorico={(proximosPassosHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2636,6 +2890,7 @@ function App() {
                         }))
                       }
                       onSaveProximosPassos={handleSaveProximosPassos}
+                      onDeleteProximosPassos={handleDeleteProximosPassos}
                       proximosPassosDateInputRef={proximosPassosDateInputRef}
                       renderInfoIcon={renderInfoIcon}
                     />
@@ -2662,6 +2917,7 @@ function App() {
                         }))
                       }
                       onSaveFortalezas={handleSaveFortalezas}
+                      onDeleteFortalezas={handleDeleteFortalezas}
                       fortalezasDateInputRef={fortalezasDateInputRef}
                       oportunidadesHistorico={(oportunidadesHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2675,6 +2931,7 @@ function App() {
                         }))
                       }
                       onSaveOportunidades={handleSaveOportunidades}
+                      onDeleteOportunidades={handleDeleteOportunidades}
                       oportunidadesDateInputRef={oportunidadesDateInputRef}
                       fraquezasHistorico={(fraquezasHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2688,6 +2945,7 @@ function App() {
                         }))
                       }
                       onSaveFraquezas={handleSaveFraquezas}
+                      onDeleteFraquezas={handleDeleteFraquezas}
                       fraquezasDateInputRef={fraquezasDateInputRef}
                       ameacasHistorico={(ameacasHistorico || []).map((r) => ({
                         data: toDisplayDate(r.data),
@@ -2701,6 +2959,7 @@ function App() {
                         }))
                       }
                       onSaveAmeacas={handleSaveAmeacas}
+                      onDeleteAmeacas={handleDeleteAmeacas}
                       ameacasDateInputRef={ameacasDateInputRef}
                       renderInfoIcon={renderInfoIcon}
                     />
