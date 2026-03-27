@@ -15,7 +15,8 @@ public sealed class PeopleManagementDbContext : DbContext
     public DbSet<FeedbackEntity> Feedbacks => Set<FeedbackEntity>();
     public DbSet<OneOnOneEntity> OneOnOnes => Set<OneOnOneEntity>();
     public DbSet<CulturaAvaliacaoEntity> CulturaAvaliacoes => Set<CulturaAvaliacaoEntity>();
-    public DbSet<TooltipEntity> Tooltips => Set<TooltipEntity>();
+    public DbSet<DicaEntity> Dicas => Set<DicaEntity>();
+    public DbSet<TooltipEntity> Propriedades => Set<TooltipEntity>();
     public DbSet<DiscEntity> Discs => Set<DiscEntity>();
     public DbSet<ConhecimentoEntity> Conhecimentos => Set<ConhecimentoEntity>();
     public DbSet<HabilidadeEntity> Habilidades => Set<HabilidadeEntity>();
@@ -92,11 +93,21 @@ public sealed class PeopleManagementDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<DicaEntity>(builder =>
+        {
+            builder.ToTable("Dica");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).ValueGeneratedNever();
+            builder.Property(x => x.ConteudoHtml).IsRequired();
+        });
+
         modelBuilder.Entity<TooltipEntity>(builder =>
         {
-            builder.ToTable("Tooltip");
-            builder.HasKey(x => x.ChaveCampo);
-            builder.Property(x => x.Texto).IsRequired();
+            builder.ToTable("Propriedade");
+            builder.HasKey(x => new { x.Nome, x.ValueObject });
+            builder.Property(x => x.Nome).IsRequired();
+            builder.Property(x => x.ValueObject).IsRequired().HasColumnName("Value Object");
+            builder.Property(x => x.Tooltip).IsRequired();
         });
 
         modelBuilder.Entity<DiscEntity>(builder =>

@@ -9,6 +9,7 @@ using PeopleManagement.Application.Features.Ameacas;
 using PeopleManagement.Application.Features.Atitudes;
 using PeopleManagement.Application.Features.Conhecimentos;
 using PeopleManagement.Application.Features.Dashboard;
+using PeopleManagement.Application.Features.Dicas;
 using PeopleManagement.Application.Features.Disc;
 using PeopleManagement.Application.Features.Expectativas;
 using PeopleManagement.Application.Features.Fortalezas;
@@ -22,6 +23,7 @@ using PeopleManagement.Application.Features.Oportunidades;
 using PeopleManagement.Application.Features.Personalidade;
 using PeopleManagement.Application.Features.ProximosPassos;
 using PeopleManagement.Application.Features.SituacaoAtual;
+using PeopleManagement.Application.Features.Tooltips;
 using PeopleManagement.Application.Features.Valores;
 using InfraCultura = PeopleManagement.Infrastructure.Storage.Cultura;
 using InfraFeedbacks = PeopleManagement.Infrastructure.Storage.Feedbacks;
@@ -43,6 +45,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStorageCommandBus, SqliteStorageCommandBus>();
 
         services.AddScoped<IStorageCommandHandler<ListarDashboardCardsQuery, IReadOnlyCollection<DashboardCardProjection>>, ListarDashboardCardsHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ObterDicasQuery, DicasRegistro?>, ObterDicasHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarDicasCommand, StorageUnit>, SalvarDicasHandler>();
 
         services.AddScoped<IStorageCommandHandler<ListarDiscQuery, IReadOnlyCollection<DiscRegistro>>, ListarDiscHandler>();
         services.AddScoped<IStorageCommandHandler<VerificarExistenciaLideradoDiscQuery, bool>, VerificarExistenciaLideradoDiscHandler>();
@@ -156,6 +161,10 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStorageCommandHandler<AppOneOnOnes.VerificarExistenciaLideradoOneOnOnesQuery, bool>, InfraOneOnOnes.VerificarExistenciaLideradoOneOnOnesFeatureHandler>();
         services.AddScoped<IStorageCommandHandler<AppOneOnOnes.SalvarOneOnOnesCommand, StorageUnit>, InfraOneOnOnes.SalvarOneOnOnesFeatureHandler>();
         services.AddScoped<IStorageCommandHandler<AppOneOnOnes.RemoverOneOnOnesCommand, StorageUnit>, InfraOneOnOnes.RemoverOneOnOnesFeatureHandler>();
+
+        services.AddScoped<IStorageCommandHandler<ListarTooltipsQuery, IReadOnlyCollection<TooltipPropriedadeRegistro>>, ListarTooltipsHandler>();
+        services.AddScoped<IStorageCommandHandler<ObterTooltipPorNomeValueObjectQuery, TooltipPropriedadeRegistro?>, ObterTooltipPorNomeValueObjectHandler>();
+        services.AddScoped<IStorageCommandHandler<SalvarTooltipCommand, StorageUnit>, SalvarTooltipHandler>();
 
         return services;
     }

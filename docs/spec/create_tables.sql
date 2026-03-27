@@ -66,11 +66,6 @@ CREATE TABLE CulturaAvaliacao (
     FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
-CREATE TABLE Tooltip (
-    ChaveCampo TEXT PRIMARY KEY,
-    Texto TEXT NOT NULL
-);
-
 CREATE TABLE Disc (
     IdLiderado TEXT NOT NULL,
     Data TEXT NOT NULL,
@@ -199,4 +194,15 @@ CREATE TABLE Ameaca (
     FOREIGN KEY (IdLiderado) REFERENCES Liderados(Id) ON DELETE CASCADE
 );
 
+CREATE TABLE Propriedade (
+    Nome TEXT NOT NULL,
+    "Value Object" TEXT NOT NULL,
+    Tooltip TEXT NOT NULL,
+    PRIMARY KEY (Nome, "Value Object")
+);
+
+CREATE TABLE Dica (
+    Id INTEGER PRIMARY KEY,
+    ConteudoHtml TEXT NOT NULL
+);
 

@@ -1,4 +1,5 @@
 using PeopleManagement.Application.Features.Dashboard;
+using PeopleManagement.Application.Features.Tooltips;
 
 namespace PeopleManagement.Tests.Features.Dashboard;
 
@@ -7,7 +8,7 @@ public sealed class DashboardServiceTests
     [Fact]
     public async Task ObterAsync_DeveOrdenarCardsPorNome()
     {
-        var service = new DashboardService(new FakeDashboardRepository());
+        var service = new DashboardService(new FakeDashboardRepository(), new FakeTooltipsRepository());
 
         var response = await service.ObterAsync(CancellationToken.None);
 
@@ -27,6 +28,18 @@ public sealed class DashboardServiceTests
 
             return Task.FromResult(cards);
         }
+    }
+
+    private sealed class FakeTooltipsRepository : ITooltipsRepository
+    {
+        public Task<IReadOnlyCollection<TooltipPropriedadeRegistro>> ListarAsync(CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyCollection<TooltipPropriedadeRegistro>>([]);
+
+        public Task<TooltipPropriedadeRegistro?> ObterAsync(string nome, string valueObject, CancellationToken cancellationToken)
+            => Task.FromResult<TooltipPropriedadeRegistro?>(null);
+
+        public Task SalvarAsync(TooltipPropriedadeRegistro registro, CancellationToken cancellationToken)
+            => Task.CompletedTask;
     }
 }
 

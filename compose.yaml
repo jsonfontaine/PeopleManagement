@@ -1,0 +1,42 @@
+# Podman Compose / Docker Compose – PeopleManagement
+#
+# Usage (Podman – built-in compose, requires Podman 4.4+):
+#   podman compose up --build --force-recreate -d   # rebuild e recria containers
+#   podman compose up -d                            # sobe sem rebuild
+#   podman compose down                             # para e remove containers
+#   podman compose logs -f                          # acompanha os logs
+#
+# O banco SQLite é armazenado no volume nomeado "db-data".
+# Na primeira execução o entrypoint copia o seed (dados produtivos) para o volume.
+# Execuções seguintes usam o volume existente – dados persistem entre reinicializações.
+# Para resetar o banco: podman volume rm peoplemanagement_db-data
+
+services:
+
+  # ── Backend – ASP.NET Core 8 API ──────────────────────────────────────────
+  api:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    ports:
+      - "5252:8080"
+    volumes:
+      - db-data:/app/App_Data
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Data Source=App_Data/peoplemanagement.db"
+    restart: unless-stopped
+
+  # ── Frontend – Vite build served by Nginx ─────────────────────────────────
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5251:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  db-data:

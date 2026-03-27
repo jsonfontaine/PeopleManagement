@@ -4,6 +4,7 @@ using PeopleManagement.Application.Features.Atitudes;
 using PeopleManagement.Application.Features.Conhecimentos;
 using PeopleManagement.Application.Features.Cultura;
 using PeopleManagement.Application.Features.Dashboard;
+using PeopleManagement.Application.Features.Dicas;
 using PeopleManagement.Application.Features.Disc;
 using PeopleManagement.Application.Features.Expectativas;
 using PeopleManagement.Application.Features.Feedbacks;
@@ -19,6 +20,7 @@ using PeopleManagement.Application.Features.OneOnOnes;
 using PeopleManagement.Application.Features.Personalidade;
 using PeopleManagement.Application.Features.ProximosPassos;
 using PeopleManagement.Application.Features.SituacaoAtual;
+using PeopleManagement.Application.Features.Tooltips;
 using PeopleManagement.Application.Features.Valores;
 
 namespace PeopleManagement.Application.DependencyInjection;
@@ -29,6 +31,9 @@ public static class ApplicationServiceCollectionExtensions
     {
         services.AddScoped<DashboardService>();
         services.AddScoped<IDashboardRepository, DashboardRepository>();
+
+        services.AddScoped<DicasService>();
+        services.AddScoped<IDicasRepository, DicasRepository>();
 
         services.AddScoped<DiscService>();
         services.AddScoped<IDiscRepository, DiscRepository>();
@@ -89,6 +94,9 @@ public static class ApplicationServiceCollectionExtensions
 
         services.AddScoped<OneOnOnesService>();
         services.AddScoped<IOneOnOnesRepository, OneOnOnesRepository>();
+
+        services.AddScoped<TooltipsService>();
+        services.AddScoped<ITooltipsRepository, TooltipsRepository>();
 
         return services;
     }

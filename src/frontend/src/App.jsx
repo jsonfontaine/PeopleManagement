@@ -81,6 +81,44 @@ const DEFAULT_TOOLTIPS = {
   redFlags: ["Existe algum fator de risco comportamental que merece atencao?"]
 };
 
+const TOOLTIP_VALUE_OBJECT_BY_KEY = {
+  disc: "Classificacao de Perfil",
+  personalidade: "Classificacao de Perfil",
+  nineBox: "Classificacao de Perfil",
+  conhecimentos: "CHAVE",
+  habilidades: "CHAVE",
+  atitudes: "CHAVE",
+  valores: "CHAVE",
+  expectativas: "CHAVE",
+  metas: "GROW / PDI",
+  situacaoAtual: "GROW / PDI",
+  opcoes: "GROW / PDI",
+  proximosPassos: "GROW / PDI",
+  fortalezas: "SWOT",
+  oportunidades: "SWOT",
+  fraquezas: "SWOT",
+  ameacas: "SWOT",
+  gostosPessoais: "Informacoes Pessoais",
+  redFlags: "Informacoes Pessoais",
+  bio: "Informacoes Pessoais",
+  nome: "Informacoes Pessoais",
+  dataNascimento: "Informacoes Pessoais",
+  estadoCivil: "Informacoes Pessoais",
+  quantidadeFilhos: "Informacoes Pessoais",
+  dataContratacao: "Informacoes Pessoais",
+  cargo: "Informacoes Pessoais",
+  dataInicioCargo: "Informacoes Pessoais",
+  aspiracaoCarreira: "Informacoes Pessoais"
+};
+
+function resolveTooltipValueObject(key) {
+  return TOOLTIP_VALUE_OBJECT_BY_KEY[key] || "Geral";
+}
+
+function buildTooltipCompositeKey(nome, valueObject) {
+  return `${String(nome || "").trim()}::${String(valueObject || "").trim()}`;
+}
+
 function formatDateDigitsToMask(rawValue) {
   const digits = String(rawValue || "").replace(/\D/g, "").slice(0, 8);
   if (digits.length <= 2) {
@@ -237,13 +275,15 @@ function isRichTextEmpty(value) {
   return !richTextToPlainText(value);
 }
 
-function RichTextEditor({ value, onChange, placeholder = "", className = "", minHeight = 95 }) {
+function RichTextEditor({ value, onChange, placeholder = "", className = "", minHeight = 95, contentRef = null, fillHeight = false }) {
   const editorRef = useRef(null);
+  const lastEmittedHtmlRef = useRef("");
   const normalizedValue = useMemo(() => normalizeRichTextValue(value), [value]);
   const effectiveMinHeight = Math.max(95, Number(minHeight) || 95);
 
   function adjustEditorHeight() {
-    if (!editorRef.current) {
+    // When fillHeight is true, CSS flex controls the height — skip JS sizing.
+    if (fillHeight || !editorRef.current) {
       return;
     }
 
@@ -257,16 +297,32 @@ function RichTextEditor({ value, onChange, placeholder = "", className = "", min
       return;
     }
 
+    if (contentRef && typeof contentRef === "object") {
+      contentRef.current = editorRef.current;
+    }
+
+    // While user is typing, never rewrite innerHTML, otherwise the caret jumps.
+    if (document.activeElement === editorRef.current) {
+      return;
+    }
+
     if (editorRef.current.innerHTML !== normalizedValue) {
       editorRef.current.innerHTML = normalizedValue;
     }
 
+    lastEmittedHtmlRef.current = normalizedValue;
     adjustEditorHeight();
   }, [normalizedValue, effectiveMinHeight]);
 
   function updateValue() {
     adjustEditorHeight();
     const html = sanitizeRichText(editorRef.current?.innerHTML || "");
+
+    if (html === lastEmittedHtmlRef.current) {
+      return;
+    }
+
+    lastEmittedHtmlRef.current = html;
     onChange?.(html);
   }
 
@@ -288,7 +344,7 @@ function RichTextEditor({ value, onChange, placeholder = "", className = "", min
   }
 
   return (
-    <div className={`rich-text-editor ${className}`}>
+    <div className={`rich-text-editor${fillHeight ? " rich-text-editor--fill" : ""} ${className}`}>
       <div className="rich-text-toolbar" aria-label="Formatacao de texto">
         <button type="button" className="btn ghost small" onClick={() => execute("bold")}>B</button>
         <button type="button" className="btn ghost small" onClick={() => execute("italic")}>I</button>
@@ -304,7 +360,7 @@ function RichTextEditor({ value, onChange, placeholder = "", className = "", min
         contentEditable
         suppressContentEditableWarning
         data-placeholder={placeholder}
-        style={{ minHeight: effectiveMinHeight }}
+        style={fillHeight ? undefined : { minHeight: effectiveMinHeight }}
         onInput={updateValue}
         onBlur={updateValue}
       />
@@ -862,7 +918,16 @@ function SwotSection({
 }
 
 function App() {
-  const [view, setView] = useState("dashboard");
+  const [view, setView] = useState(() => {
+    const path = (window.location.pathname || "").toLowerCase();
+    if (path === "/dicas") {
+      return "dicas";
+    }
+
+    // Compatibilidade temporaria com o formato antigo ?view=dicas.
+    const viewFromQuery = new URLSearchParams(window.location.search).get("view");
+    return viewFromQuery === "dicas" ? "dicas" : "dashboard";
+  });
   const [loading, setLoading] = useState(true);
   const [loadingLeader, setLoadingLeader] = useState(false);
   const [error, setError] = useState("");
@@ -910,8 +975,12 @@ function App() {
   const [tooltipMap, setTooltipMap] = useState({});
   const [hoverTooltip, setHoverTooltip] = useState({ visible: false, x: 0, y: 0, text: "" });
   const [tooltipModal, setTooltipModal] = useState({ open: false, key: "", label: "", text: "" });
+  const [dicasConteudo, setDicasConteudo] = useState("");
+  const [loadingDicas, setLoadingDicas] = useState(false);
 
   const animationFrameRef = useRef(null);
+  const tooltipHoverRef = useRef({ icon: false, panel: false });
+  const tooltipHideTimeoutRef = useRef(null);
 
   const [classificacaoPerfilDraft, setClassificacaoPerfilDraft] = useState({
     disc: { data: "", valor: "" },
@@ -967,6 +1036,77 @@ function App() {
   const feedbackDateInputRef = useRef(null);
   const oneOnOneDateInputRef = useRef(null);
   const culturaDateInputRef = useRef(null);
+  const dicasEditorContentRef = useRef(null);
+
+  const dicasTableOfContents = useMemo(() => {
+    const html = String(dicasConteudo || "").trim();
+    if (!html) {
+      return [];
+    }
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+    const items = Array.from(doc.querySelectorAll("li"))
+      .map((li, index) => ({
+        id: `dicas-item-${index}`,
+        text: (li.textContent || "").trim(),
+        index
+      }))
+      .filter((item) => Boolean(item.text));
+
+    return items;
+  }, [dicasConteudo]);
+
+  function scrollDicaItemToTop(index) {
+    const editorElement = dicasEditorContentRef.current;
+    if (!editorElement) {
+      return;
+    }
+
+    const listItems = editorElement.querySelectorAll("li");
+    const targetItem = listItems[index];
+    if (!targetItem) {
+      return;
+    }
+
+    targetItem.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function clearTooltipHideTimer() {
+    if (tooltipHideTimeoutRef.current) {
+      clearTimeout(tooltipHideTimeoutRef.current);
+      tooltipHideTimeoutRef.current = null;
+    }
+  }
+
+  function scheduleTooltipHide() {
+    clearTooltipHideTimer();
+    tooltipHideTimeoutRef.current = setTimeout(() => {
+      if (!tooltipHoverRef.current.icon && !tooltipHoverRef.current.panel) {
+        setHoverTooltip((prev) => ({ ...prev, visible: false }));
+      }
+    }, 120);
+  }
+
+  function syncTooltipsFromDashboard(dashboardResponse) {
+    const registros = dashboardResponse?.tooltips || [];
+    if (!Array.isArray(registros) || registros.length === 0) {
+      return;
+    }
+
+    const nextMap = {};
+    for (const registro of registros) {
+      const nome = registro?.nome || "";
+      const valueObject = registro?.valueObject || "";
+      const key = buildTooltipCompositeKey(nome, valueObject);
+      if (!key || !registro?.tooltip) {
+        continue;
+      }
+      nextMap[key] = registro.tooltip;
+    }
+
+    setTooltipMap((prev) => ({ ...prev, ...nextMap }));
+  }
 
   useEffect(() => {
     let active = true;
@@ -976,6 +1116,16 @@ function App() {
       setError("");
 
       try {
+        if (view === "dicas") {
+          const dicasResponse = await requestJson("/api/dicas");
+          if (!active) {
+            return;
+          }
+
+          setDicasConteudo(dicasResponse?.conteudoHtml || "");
+          return;
+        }
+
         const [dashboard, lideradosList] = await Promise.all([
           requestJson("/api/dashboard/"),
           requestJson("/api/liderados/")
@@ -988,6 +1138,7 @@ function App() {
         const cards = dashboard?.cards || [];
         setDashboardCards(cards);
         setLiderados(lideradosList || []);
+        syncTooltipsFromDashboard(dashboard);
 
         const firstId = cards[0]?.lideradoId || lideradosList?.[0]?.id;
         if (firstId) {
@@ -1011,6 +1162,12 @@ function App() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      clearTooltipHideTimer();
+    };
+  }, []);
+
+  useEffect(() => {
     if (view !== "dashboard") {
       return;
     }
@@ -1029,12 +1186,46 @@ function App() {
 
         setDashboardCards(dashboard?.cards || []);
         setLiderados(lideradosList || []);
+        syncTooltipsFromDashboard(dashboard);
       } catch {
         // noop: keeps current data and avoids noisy errors when toggling views quickly
       }
     }
 
     loadDashboardFresh();
+    return () => {
+      active = false;
+    };
+  }, [view]);
+
+  useEffect(() => {
+    if (view !== "dicas") {
+      return;
+    }
+
+    let active = true;
+
+    async function loadDicas() {
+      setLoadingDicas(true);
+      try {
+        const response = await requestJson("/api/dicas");
+        if (!active) {
+          return;
+        }
+
+        setDicasConteudo(response?.conteudoHtml || "");
+      } catch (loadError) {
+        if (active) {
+          setError(loadError.message);
+        }
+      } finally {
+        if (active) {
+          setLoadingDicas(false);
+        }
+      }
+    }
+
+    loadDicas();
     return () => {
       active = false;
     };
@@ -1457,6 +1648,7 @@ function App() {
 
     const [dashboard] = await Promise.all([requestJson("/api/dashboard/")]);
     setDashboardCards(dashboard?.cards || []);
+    syncTooltipsFromDashboard(dashboard);
     setSelectedLideradoId((current) => current || selectedLideradoId);
   }
 
@@ -1478,6 +1670,7 @@ function App() {
       ]);
       setDashboardCards(dashboard?.cards || []);
       setLiderados(lideradosList || []);
+      syncTooltipsFromDashboard(dashboard);
     } catch (saveError) {
       setError(saveError.message);
     }
@@ -1512,6 +1705,7 @@ function App() {
 
       setDashboardCards(cards);
       setLiderados(nextLiderados);
+      syncTooltipsFromDashboard(dashboard);
       setSelectedLideradoId(nextId ? String(nextId) : "");
       setView("dashboard");
       setLeaderReloadKey((value) => value + 1);
@@ -2125,12 +2319,30 @@ function App() {
     });
   }
 
+  async function handleSaveDicas() {
+    try {
+      await requestJson("/api/dicas", {
+        method: "PUT",
+        body: JSON.stringify({ conteudoHtml: dicasConteudo || "" })
+      });
+
+      const response = await requestJson("/api/dicas");
+      setDicasConteudo(response?.conteudoHtml || "");
+      setError("");
+      window.alert("Dicas salvas.");
+    } catch (saveError) {
+      setError(saveError.message);
+    }
+  }
+
   function getTabLabel(tabName) {
     return TAB_LABELS[tabName] || tabName;
   }
 
-  function getTooltipText(key) {
-    const value = tooltipMap[key];
+  function getTooltipText(label, key) {
+    const valueObject = resolveTooltipValueObject(key);
+    const compositeKey = buildTooltipCompositeKey(label, valueObject);
+    const value = tooltipMap[compositeKey];
     if (value && value.trim()) {
       return value;
     }
@@ -2141,32 +2353,37 @@ function App() {
     return DEFAULT_TOOLTIPS.default.join("\n");
   }
 
-  async function ensureTooltip(key) {
-    if (!key || tooltipMap[key]) {
+  async function ensureTooltip(label, key) {
+    const valueObject = resolveTooltipValueObject(key);
+    const compositeKey = buildTooltipCompositeKey(label, valueObject);
+    if (!key || !label || tooltipMap[compositeKey]) {
       return;
     }
 
     try {
-      const response = await requestJson(`/api/tooltips/${encodeURIComponent(key)}`);
-      setTooltipMap((prev) => ({ ...prev, [key]: response?.texto || "" }));
+      const response = await requestJson(`/api/tooltips?nome=${encodeURIComponent(label)}&valueObject=${encodeURIComponent(valueObject)}`);
+      setTooltipMap((prev) => ({ ...prev, [compositeKey]: response?.tooltip || "" }));
     } catch {
       // Not found keeps default value.
     }
   }
 
   async function openTooltipModal(key, label) {
-    await ensureTooltip(key);
-    setTooltipModal({ open: true, key, label, text: getTooltipText(key) });
+    await ensureTooltip(label, key);
+    setTooltipModal({ open: true, key, label, text: getTooltipText(label, key) });
   }
 
   async function saveTooltipModal() {
     try {
-      await requestJson(`/api/tooltips/${encodeURIComponent(tooltipModal.key)}`, {
+      const valueObject = resolveTooltipValueObject(tooltipModal.key);
+      const compositeKey = buildTooltipCompositeKey(tooltipModal.label, valueObject);
+
+      await requestJson(`/api/tooltips`, {
         method: "PUT",
-        body: JSON.stringify({ texto: tooltipModal.text })
+        body: JSON.stringify({ nome: tooltipModal.label, valueObject, tooltip: tooltipModal.text })
       });
 
-      setTooltipMap((prev) => ({ ...prev, [tooltipModal.key]: tooltipModal.text }));
+      setTooltipMap((prev) => ({ ...prev, [compositeKey]: tooltipModal.text }));
       setTooltipModal({ open: false, key: "", label: "", text: "" });
     } catch (saveError) {
       setError(saveError.message);
@@ -2178,16 +2395,21 @@ function App() {
       <span
         className="info-icon"
         onMouseEnter={async (event) => {
-          await ensureTooltip(key);
+          tooltipHoverRef.current.icon = true;
+          clearTooltipHideTimer();
           const rect = event.currentTarget.getBoundingClientRect();
+          await ensureTooltip(label, key);
           setHoverTooltip({
             visible: true,
             x: rect.left + 18,
             y: rect.bottom + 8,
-            text: getTooltipText(key)
+            text: getTooltipText(label, key)
           });
         }}
-        onMouseLeave={() => setHoverTooltip((prev) => ({ ...prev, visible: false }))}
+        onMouseLeave={() => {
+          tooltipHoverRef.current.icon = false;
+          scheduleTooltipHide();
+        }}
         onDoubleClick={(event) => {
           event.preventDefault();
           openTooltipModal(key, label);
@@ -2211,7 +2433,22 @@ function App() {
       <header className="topbar" id="app-header">
         <div id="app-header-title">
           <h1 id="app-header-h1">People Management</h1>
-          <p className="subtitle" id="app-header-subtitle">Dashboard + visao individual</p>
+          <div className="header-view-switch" id="app-header-view-switch">
+            <button
+              type="button"
+              className={`btn ghost small ${view === "dashboard" || view === "leader" ? "active" : ""}`}
+              onClick={() => setView("dashboard")}
+            >
+              Dashboard
+            </button>
+            <button
+              type="button"
+              className={`btn ghost small ${view === "dicas" ? "active" : ""}`}
+              onClick={() => setView("dicas")}
+            >
+              Dicas
+            </button>
+          </div>
         </div>
       </header>
 
@@ -2299,6 +2536,52 @@ function App() {
                   <RadarChart id={`dashboardRadar-${card.lideradoId}`} className="dashboard-radar" values={card.radar} />
                 </article>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className={`view ${view === "dicas" ? "" : "hidden"}`}>
+          <div className="panel dicas-page-panel">
+            <div className="panel-header">
+              <h2>Dicas</h2>
+              <button type="button" className="btn" onClick={handleSaveDicas}>
+                Salvar
+              </button>
+            </div>
+            {loadingDicas ? <p className="muted">Carregando dicas...</p> : null}
+            <div className="dicas-page-content">
+              <div className="dicas-editor-pane">
+                <RichTextEditor
+                  className="dicas-rich-editor"
+                  minHeight={640}
+                  placeholder="Registre todas as dicas do sistema aqui"
+                  value={dicasConteudo}
+                  onChange={setDicasConteudo}
+                  contentRef={dicasEditorContentRef}
+                />
+              </div>
+              <aside className="dicas-toc-pane" aria-label="Table of Contents">
+                <h3>Table of Contents</h3>
+                {dicasTableOfContents.length === 0 ? (
+                  <p className="muted small">Nenhum item de lista encontrado.</p>
+                ) : (
+                  <ol className="dicas-toc-list">
+                    {dicasTableOfContents.map((item) => (
+                      <li key={item.id}>
+                        <a
+                          href={`#${item.id}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            scrollDicaItemToTop(item.index);
+                          }}
+                        >
+                          {item.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </aside>
             </div>
           </div>
         </section>
@@ -2472,7 +2755,7 @@ function App() {
                         </label>
                         <RichTextEditor
                           className="field-rich-text"
-                          minHeight={260}
+                          fillHeight={true}
                           placeholder="Registrar bio"
                           value={personalForm.bio}
                           onChange={(nextValue) => setPersonalForm((prev) => ({ ...prev, bio: nextValue }))}
@@ -2975,6 +3258,14 @@ function App() {
         id="tooltip"
         className={`tooltip ${hoverTooltip.visible ? "" : "hidden"}`}
         style={{ left: `${hoverTooltip.x}px`, top: `${hoverTooltip.y}px` }}
+        onMouseEnter={() => {
+          tooltipHoverRef.current.panel = true;
+          clearTooltipHideTimer();
+        }}
+        onMouseLeave={() => {
+          tooltipHoverRef.current.panel = false;
+          scheduleTooltipHide();
+        }}
       >
         <RichTextView value={hoverTooltip.text} className="tooltip-rich-text" />
       </div>
